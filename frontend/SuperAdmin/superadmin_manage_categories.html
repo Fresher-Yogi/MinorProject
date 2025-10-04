@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><title>Manage Categories</title>
+    <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link-active { background-color: #7c3aed; color: white; } </style>
+</head>
+<body class="bg-gray-100 flex h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-900 text-gray-300 flex flex-col">
+        <div class="p-5 text-white text-2xl font-bold border-b border-gray-800">Super Admin</div>
+        <nav class="flex-1 p-3 space-y-2">
+            <a href="superadmin_dashboard.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-globe w-8"></i>Global Dashboard</a>
+            <a href="superadmin_approval.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-user-check w-8"></i>Admin Approvals</a>
+            <a href="superadmin_manage_branches.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-store w-8"></i>Manage Branches</a>
+            <a href="superadmin_manage_categories.html" class="flex items-center p-3 rounded-lg sidebar-link-active"><i class="fas fa-sitemap w-8"></i>Service Categories</a>
+            <a href="superadmin_global_analytics.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-chart-pie w-8"></i>Global Analytics</a>
+        </nav>
+        <div class="p-5 border-t border-gray-800"><a href="index.html" class="flex items-center text-red-400 hover:text-red-300"><i class="fas fa-sign-out-alt w-8"></i>Logout</a></div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Service Categories</h1>
+        <!-- Add New Category -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="font-semibold text-xl mb-4">Add New Category</h2>
+            <div class="flex items-center gap-4">
+                <input type="text" placeholder="Category Name (e.g., Government Offices)" class="flex-1 p-2 border rounded-lg">
+                <button class="bg-purple-600 text-white px-5 py-2 rounded-lg hover:bg-purple-700">Add Category</button>
+            </div>
+        </div>
+        <!-- Existing Categories -->
+        <div class="bg-white p-6 rounded-lg shadow">
+             <h2 class="font-semibold text-xl mb-4">Existing Categories</h2>
+             <div class="space-y-3">
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg"><span>Hospitals</span><button class="text-red-500 hover:underline text-sm">Delete</button></div>
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg"><span>Banks</span><button class="text-red-500 hover:underline text-sm">Delete</button></div>
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg"><span>Colleges</span><button class="text-red-500 hover:underline text-sm">Delete</button></div>
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg"><span>Service Centers</span><button class="text-red-500 hover:underline text-sm">Delete</button></div>
+             </div>
+        </div>
+    </main>
+</body>
+</html>

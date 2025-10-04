@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Services - QMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .hero-banner { background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop') center/cover; }
+        .service-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .service-card:hover { transform: translateY(-10px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="index.html" class="text-3xl font-bold text-blue-600">QMS</a>
+            <a href="index.html" class="text-blue-600 hover:underline"><i class="fas fa-arrow-left mr-2"></i> Back to All Services</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Banner -->
+        <section class="hero-banner text-white py-20 md:py-32">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-6xl font-extrabold mb-4">University & College Services</h1>
+                <p class="text-lg md:text-xl">Schedule appointments with student services to save time.</p>
+            </div>
+        </section>
+
+        <!-- Sub-Services Grid -->
+        <section class="py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold inline-block border-b-4 border-blue-500 pb-3">Student Departments</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+                    <!-- Service Card 1 -->
+                    <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
+                        <i class="fas fa-file-signature fa-3x text-blue-500 mb-5"></i>
+                        <h3 class="text-2xl font-bold mb-3">Admissions Office</h3>
+                        <p class="text-gray-600 mb-6">For prospective students, application queries, and campus tours.</p>
+                        <a href="#" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                    </div>
+                    <!-- Service Card 2 -->
+                    <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
+                        <i class="fas fa-graduation-cap fa-3x text-blue-500 mb-5"></i>
+                        <h3 class="text-2xl font-bold mb-3">Registrar's Office</h3>
+                        <p class="text-gray-600 mb-6">Manage course registration, academic records, and transcripts.</p>
+                        <a href="#" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                    </div>
+                    <!-- Service Card 3 -->
+                    <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
+                        <i class="fas fa-dollar-sign fa-3x text-blue-500 mb-5"></i>
+                        <h3 class="text-2xl font-bold mb-3">Financial Aid</h3>
+                        <p class="text-gray-600 mb-6">Discuss scholarships, grants, and student loan options with a counselor.</p>
+                        <a href="#" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                    </div>
+                    <!-- Service Card 4 -->
+                    <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
+                        <i class="fas fa-university fa-3x text-blue-500 mb-5"></i>
+                        <h3 class="text-2xl font-bold mb-3">Student Affairs</h3>
+                        <p class="text-gray-600 mb-6">For housing, counseling, and other student life-related services.</p>
+                        <a href="#" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

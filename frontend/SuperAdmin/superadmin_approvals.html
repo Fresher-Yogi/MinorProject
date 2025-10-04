@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><title>Admin Approvals</title>
+    <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link-active { background-color: #5b21b6; color: white; } </style>
+</head>
+<body class="bg-gray-100 flex h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-900 text-gray-300 flex flex-col">
+        <div class="p-5 text-white text-2xl font-bold border-b border-gray-800">Super Admin</div>
+        <nav class="flex-1 p-3 space-y-2">
+            <a href="superadmin_dashboard.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-globe w-8"></i>Global Dashboard</a>
+            <a href="superadmin_approvals.html" class="flex items-center p-3 rounded-lg sidebar-link-active bg-purple-700 text-white"><i class="fas fa-user-check w-8"></i>Admin Approvals<span class="ml-auto bg-red-500 text-xs rounded-full h-5 w-5 flex items-center justify-center">2</span></a>
+            <a href="superadmin_manage_branches.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-store w-8"></i>Manage Branches</a>
+        </nav>
+        <div class="p-5 border-t border-gray-800"><a href="index.html" class="flex items-center text-red-400 hover:text-red-300"><i class="fas fa-sign-out-alt w-8"></i>Logout</a></div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Pending Admin Approvals</h1>
+        <div class="space-y-4">
+            <!-- Approval Card 1 -->
+            <div class="bg-white p-5 rounded-lg shadow flex items-center justify-between">
+                <div>
+                    <div class="font-bold text-lg">Downtown Bank</div>
+                    <div class="text-sm text-gray-600">Admin: Alice Mayer | Location: New York, NY</div>
+                </div>
+                <div class="space-x-3">
+                    <button onclick="openModal('Downtown Bank', 'approve')" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Approve</button>
+                    <button onclick="openModal('Downtown Bank', 'reject')" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Reject</button>
+                </div>
+            </div>
+            <!-- Approval Card 2 -->
+            <div class="bg-white p-5 rounded-lg shadow flex items-center justify-between">
+                <div>
+                    <div class="font-bold text-lg">Westside Clinic</div>
+                    <div class="text-sm text-gray-600">Admin: Bob Williams | Location: Los Angeles, CA</div>
+                </div>
+                <div class="space-x-3">
+                    <button onclick="openModal('Westside Clinic', 'approve')" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Approve</button>
+                    <button onclick="openModal('Westside Clinic', 'reject')" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Reject</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Modal -->
+    <div id="confirmationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-lg shadow-xl text-center">
+            <h2 id="modalTitle" class="text-xl font-bold mb-4">Confirm Action</h2>
+            <p id="modalText" class="mb-6"></p>
+            <div class="space-x-4">
+                <button onclick="closeModal()" class="bg-gray-300 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
+                <button id="confirmButton" class="text-white px-6 py-2 rounded-lg">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('confirmationModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalText = document.getElementById('modalText');
+        const confirmButton = document.getElementById('confirmButton');
+
+        function openModal(branchName, action) {
+            modalTitle.textContent = `Confirm ${action.charAt(0).toUpperCase() + action.slice(1)}`;
+            modalText.textContent = `Are you sure you want to ${action} the admin for ${branchName}?`;
+            confirmButton.className = `text-white px-6 py-2 rounded-lg ${action === 'approve' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}`;
+            modal.classList.remove('hidden');
+        }
+        function closeModal() {
+            modal.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

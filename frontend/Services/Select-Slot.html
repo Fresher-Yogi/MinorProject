@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Branch & Slot - QMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f7fafc; }
+        .slot-available {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .slot-available:hover {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            transform: scale(1.05);
+        }
+        .slot-selected {
+            background-color: #2563eb; /* blue-600 */
+            color: white;
+            font-weight: bold;
+            border-color: #1d4ed8; /* blue-700 */
+        }
+        .slot-unavailable {
+            background-color: #e5e7eb; /* gray-200 */
+            color: #9ca3af; /* gray-400 */
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="index.html" class="text-3xl font-bold text-blue-600">QMS</a>
+            <a href="hospitalservices.html" class="text-blue-600 hover:underline"><i class="fas fa-arrow-left mr-2"></i> Back to Services</a>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white p-8 rounded-2xl shadow-xl">
+                <!-- Step 1: Select Branch -->
+                <div class="mb-10">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Step 1: Select a Branch</h2>
+                    <p class="text-gray-600">Choose a location for your Cardiology appointment.</p>
+                    <div class="mt-4">
+                        <select class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option>Select a branch...</option>
+                            <option selected>City Hospital - Downtown (2 miles away)</option>
+                            <option>Green Valley Clinic (5 miles away)</option>
+                            <option>Northside Medical Center (8 miles away)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step 2: Select Date & Time -->
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Step 2: Select Date & Time</h2>
+                    <p class="text-gray-600 mb-6">Available slots for <span class="font-semibold">September 25, 2025</span>.</p>
+                    
+                    <!-- Date Picker -->
+                    <div class="mb-8">
+                        <input type="date" value="2025-09-25" class="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Time Slots -->
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 text-center">
+                        <div class="slot-available border rounded-lg p-3">10:00 AM</div>
+                        <div class="slot-unavailable border rounded-lg p-3">10:15 AM</div>
+                        <div class="slot-available border rounded-lg p-3">10:30 AM</div>
+                        <div class="slot-available border rounded-lg p-3">10:45 AM</div>
+                        <div class="slot-available border rounded-lg p-3">11:00 AM</div>
+                        <div class="slot-available border rounded-lg p-3">11:15 AM</div>
+                        <div class="slot-unavailable border rounded-lg p-3">11:30 AM</div>
+                        <div class="slot-available border rounded-lg p-3">11:45 AM</div>
+                        <div class="slot-available border rounded-lg p-3">01:00 PM</div>
+                        <div class="slot-available border rounded-lg p-3">01:15 PM</div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Confirmation -->
+                <div class="mt-10 border-t pt-8 text-center">
+                    <p class="text-lg text-gray-700 mb-4">You have selected: <strong id="selected-slot-text" class="text-blue-600">10:30 AM</strong></p>
+                    <button class="w-full max-w-sm bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg text-xl transition duration-300">
+                        Confirm Appointment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const slots = document.querySelectorAll('.slot-available');
+        const selectedSlotText = document.getElementById('selected-slot-text');
+
+        slots.forEach(slot => {
+            slot.addEventListener('click', () => {
+                // Remove 'slot-selected' from all slots
+                slots.forEach(s => s.classList.remove('slot-selected'));
+                // Add 'slot-selected' to the clicked slot
+                slot.classList.add('slot-selected');
+                // Update the confirmation text
+                selectedSlotText.textContent = slot.textContent;
+            });
+        });
+    </script>
+</body>
+</html>

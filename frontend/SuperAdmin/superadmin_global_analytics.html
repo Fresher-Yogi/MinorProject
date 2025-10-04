@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><title>Global Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link-active { background-color: #7c3aed; color: white; } </style>
+</head>
+<body class="bg-gray-100 flex h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-900 text-gray-300 flex flex-col">
+        <div class="p-5 text-white text-2xl font-bold border-b border-gray-800">Super Admin</div>
+        <nav class="flex-1 p-3 space-y-2">
+            <a href="superadmin_dashboard.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-globe w-8"></i>Global Dashboard</a>
+            <a href="superadmin_approvals.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-user-check w-8"></i>Admin Approvals</a>
+            <a href="superadmin_manage_branches.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-store w-8"></i>Manage Branches</a>
+            <a href="superadmin_manage_categories.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-sitemap w-8"></i>Service Categories</a>
+            <a href="superadmin_global_analytics.html" class="flex items-center p-3 rounded-lg sidebar-link-active"><i class="fas fa-chart-pie w-8"></i>Global Analytics</a>
+        </nav>
+        <div class="p-5 border-t border-gray-800"><a href="index.html" class="flex items-center text-red-400 hover:text-red-300"><i class="fas fa-sign-out-alt w-8"></i>Logout</a></div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 overflow-y-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Global System Analytics</h1>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- User Growth -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="font-semibold text-xl mb-4">User Registrations (Last 6 Months)</h2>
+                <canvas id="userGrowthChart"></canvas>
+            </div>
+             <!-- Busiest Branches -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="font-semibold text-xl mb-4">Busiest Branches (By Appointments)</h2>
+                <canvas id="busiestBranchChart"></canvas>
+            </div>
+        </div>
+    </main>
+    <script>
+        // User Growth Chart
+        new Chart(document.getElementById('userGrowthChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ['April', 'May', 'June', 'July', 'August', 'September'],
+                datasets: [{ label: 'New Users', data: [1200, 1800, 2500, 2200, 3100, 4200], backgroundColor: 'rgba(124, 58, 237, 0.2)', borderColor: '#7c3aed', borderWidth: 2, tension: 0.3 }]
+            },
+            options: { responsive: true }
+        });
+
+        // Busiest Branch Chart
+        new Chart(document.getElementById('busiestBranchChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['City Hospital', 'Main St. Bank', 'Downtown Clinic', 'Tech University'],
+                datasets: [{ label: 'Appointments This Month', data: [890, 750, 620, 450], backgroundColor: ['#3b82f6', '#16a34a', '#f59e0b', '#ef4444'] }]
+            },
+            options: { responsive: true, indexAxis: 'y' }
+        });
+    </script>
+</body>
+</html>
