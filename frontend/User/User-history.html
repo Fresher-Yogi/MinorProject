@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><title>Appointment History</title>
+    <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link:hover, .sidebar-link-active { background-color: #2563eb; color: white; } </style>
+</head>
+<body class="bg-gray-100 flex h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-800 text-gray-300 flex-col hidden sm:flex">
+        <div class="p-5 text-white text-2xl font-bold border-b border-gray-700">QMS</div>
+        <nav class="flex-1 p-3 space-y-2">
+            <a href="User-Dashboard.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-home w-8"></i>Dashboard</a>
+            <a href="User-history.html" class="flex items-center p-3 rounded-lg sidebar-link-active bg-blue-600 text-white"><i class="fas fa-history w-8"></i>History</a>
+            <a href="User-Profile.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-user-cog w-8"></i>Profile</a>
+        </nav>
+        <div class="p-5 border-t border-gray-700">
+            <button onclick="handleLogout()" class="flex items-center text-red-400 hover:text-red-300 w-full cursor-pointer transition">
+                <i class="fas fa-sign-out-alt w-8"></i>
+                <span class="ml-3">Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-4 sm:p-6 overflow-y-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Appointment History</h1>
+        <div class="bg-white p-6 rounded-2xl shadow-lg">
+            
+            <!-- DYNAMIC HISTORY CONTAINER -->
+            <div id="history-container" class="space-y-4">
+                <!-- JavaScript will fill this area with real appointment history -->
+                <div class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i>
+                    <p class="mt-2 text-gray-600">Loading your history...</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- JAVASCRIPT LOGIC TO MAKE THE PAGE DYNAMIC -->
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        // When the page loads, this function will run
+        window.addEventListener('DOMContentLoaded', () => {
+            // First, check if the user is logged in
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please login first to view your history!');
+                window.location.href = 'UserRegLogForm.html';
+                return;
+            }
+            // If logged in, fetch the appointment history
+            fetchHistory();
+        });
+
+        // This function fetches all necessary data from the backend
+        async function fetchHistory() {
+            const token = localStorage.getItem('token');
+            const historyContainer = document.getElementById('history-container');
+
+            try {
+                // We are fetching appointments and branches at the same time for speed
+                const [appointmentsRes, branchesRes] = await Promise.all([
+                    fetch(`${API_URL}/appointments/my-appointments`, { headers: { 'x-auth-token': token } }),
+                    fetch(`${API_URL}/branches`)
+                ]);
+
+                if (!appointmentsRes.ok || !branchesRes.ok) {
+                    throw new Error('Failed to fetch data from the server.');
+                }
+
+                const appointments = await appointmentsRes.json();
+                const branches = await branchesRes.json();
+
+                // Create a helper map to easily find a branch name using its ID
+                const branchMap = new Map(branches.map(branch => [branch.id, branch.name]));
+                
+                // Now, display the fetched data on the screen
+                displayHistory(appointments, branchMap);
+
+            } catch (error) {
+                console.error('Error fetching history:', error);
+                historyContainer.innerHTML = `<div class="bg-red-100 text-red-700 p-4 rounded-lg">Error loading history. Please try refreshing the page.</div>`;
+            }
+        }
+
+        // This function converts the data into HTML and displays it
+        function displayHistory(appointments, branchMap) {
+            const historyContainer = document.getElementById('history-container');
+
+            // If the user has no appointments at all
+            if (appointments.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-box-open text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-600 font-semibold">You have no appointment history yet.</p>
+                    </div>`;
+                return;
+            }
+
+            // Sort all appointments in reverse chronological order (newest first)
+            const sortedAppointments = appointments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            // Create an HTML card for each appointment
+            historyContainer.innerHTML = sortedAppointments.map(appointment => {
+                const branchName = branchMap.get(appointment.branchId) || 'Unknown Branch';
+                const appointmentDate = new Date(appointment.appointmentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                
+                // Set color and text based on the appointment status
+                let statusClass = '';
+                let statusText = appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1);
+
+                if (appointment.status === 'completed') {
+                    statusClass = 'bg-green-50 text-green-700 border-green-200';
+                } else if (appointment.status === 'cancelled') {
+                    statusClass = 'bg-red-50 text-red-700 border-red-200';
+                } else { // 'pending'
+                    statusClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                }
+
+                return `
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg ${statusClass}">
+                        <div>
+                            <p class="font-bold text-lg text-gray-800">${appointment.serviceType}</p>
+                            <p class="text-sm text-gray-600">${branchName} | ${appointmentDate}</p>
+                        </div>
+                        <div class="mt-2 sm:mt-0 text-sm font-semibold">${statusText}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Logout function
+        function handleLogout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'UserRegLogForm.html';
+        }
+    </script>
+
+</body>
+</html>

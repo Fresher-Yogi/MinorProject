@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Branch & Slot - QMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f7fafc; }
+        .slot-available {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .slot-available:hover {
+            background-color: #3b82f6;
+            color: white;
+            transform: scale(1.05);
+        }
+        .slot-selected {
+            background-color: #2563eb;
+            color: white;
+            font-weight: bold;
+            border-color: #1d4ed8;
+        }
+        .slot-unavailable {
+            background-color: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="../index.html" class="text-3xl font-bold text-blue-600">QMS</a>
+            <a href="hospitalservices.html" class="text-blue-600 hover:underline">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Services
+            </a>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white p-8 rounded-2xl shadow-xl">
+                
+                <!-- Service Info -->
+                <div class="mb-8 p-4 bg-blue-50 rounded-lg">
+                    <h2 class="text-2xl font-bold text-gray-800">
+                        Booking: <span id="service-name" class="text-blue-600">Loading...</span>
+                    </h2>
+                </div>
+
+                <!-- Step 1: Select Branch -->
+                <div class="mb-10">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Step 1: Select a Branch</h2>
+                    <p class="text-gray-600 mb-4">Choose a location for your appointment.</p>
+                    <select id="branch-select" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Loading branches...</option>
+                    </select>
+                </div>
+
+                <!-- Step 2: Select Date -->
+                <div class="mb-10">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Step 2: Select Date</h2>
+                    <input type="date" id="appointment-date" class="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <!-- Step 3: Select Time Slot -->
+                <div class="mb-10">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Step 3: Select Time Slot</h2>
+                    <p class="text-gray-600 mb-6">Available time slots</p>
+                    
+                    <div id="time-slots-container" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 text-center">
+                        <!-- Time slots will be generated here -->
+                    </div>
+                </div>
+
+                <!-- Confirmation -->
+                <div class="mt-10 border-t pt-8">
+                    <div class="bg-gray-50 p-6 rounded-lg mb-6">
+                        <h3 class="font-bold text-xl mb-4">Booking Summary</h3>
+                        <div class="space-y-2 text-left">
+                            <p><strong>Service:</strong> <span id="summary-service">-</span></p>
+                            <p><strong>Branch:</strong> <span id="summary-branch">-</span></p>
+                            <p><strong>Date:</strong> <span id="summary-date">-</span></p>
+                            <p><strong>Time:</strong> <span id="summary-time">-</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button id="confirm-btn" onclick="confirmAppointment()" 
+                                class="w-full max-w-sm bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg text-xl transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                disabled>
+                            Confirm Appointment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let selectedBranch = null;
+        let selectedDate = null;
+        let selectedTime = null;
+        let branches = [];
+
+        // Time slots (you can customize these)
+        const timeSlots = [
+            '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+            '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM'
+        ];
+
+        // Initialize page
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Check if user is logged in
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please login first!');
+                window.location.href = '../User/UserRegLogForm.html';
+                return;
+            }
+
+            // Get selected service
+            const serviceName = sessionStorage.getItem('selectedService');
+            if (!serviceName) {
+                alert('Please select a service first!');
+                window.location.href = 'hospitalservices.html';
+                return;
+            }
+
+            document.getElementById('service-name').textContent = serviceName;
+            document.getElementById('summary-service').textContent = serviceName;
+
+            // Load branches
+            await loadBranches();
+
+            // Generate time slots
+            generateTimeSlots();
+
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('appointment-date').min = today;
+            document.getElementById('appointment-date').value = today;
+            selectedDate = today;
+            updateSummary();
+
+            // Add event listeners
+            document.getElementById('branch-select').addEventListener('change', handleBranchChange);
+            document.getElementById('appointment-date').addEventListener('change', handleDateChange);
+        });
+
+        // Load branches from API
+        async function loadBranches() {
+            try {
+                const response = await fetch(`${API_URL}/branches`);
+                branches = await response.json();
+
+                const branchSelect = document.getElementById('branch-select');
+                branchSelect.innerHTML = '<option value="">Select a branch...</option>';
+
+                branches.forEach(branch => {
+                    const option = document.createElement('option');
+                    option.value = branch.id;
+                    option.textContent = `${branch.name} - ${branch.location}`;
+                    branchSelect.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error('Error loading branches:', error);
+                alert('Error loading branches. Please refresh the page.');
+            }
+        }
+
+        // Generate time slot buttons
+        function generateTimeSlots() {
+            const container = document.getElementById('time-slots-container');
+            container.innerHTML = '';
+
+            timeSlots.forEach(slot => {
+                const button = document.createElement('div');
+                button.className = 'slot-available border rounded-lg p-3';
+                button.textContent = slot;
+                button.onclick = () => selectTimeSlot(slot, button);
+                container.appendChild(button);
+            });
+        }
+
+        // Handle branch selection
+        function handleBranchChange(event) {
+            const branchId = event.target.value;
+            selectedBranch = branches.find(b => b.id == branchId);
+            
+            if (selectedBranch) {
+                document.getElementById('summary-branch').textContent = 
+                    `${selectedBranch.name} - ${selectedBranch.location}`;
+            } else {
+                document.getElementById('summary-branch').textContent = '-';
+            }
+            
+            updateConfirmButton();
+        }
+
+        // Handle date change
+        function handleDateChange(event) {
+            selectedDate = event.target.value;
+            document.getElementById('summary-date').textContent = 
+                new Date(selectedDate).toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+            updateConfirmButton();
+        }
+
+        // Handle time slot selection
+        function selectTimeSlot(time, element) {
+            // Remove previous selection
+            document.querySelectorAll('.slot-available').forEach(slot => {
+                slot.classList.remove('slot-selected');
+            });
+
+            // Add selection to clicked slot
+            element.classList.add('slot-selected');
+            selectedTime = time;
+            
+            document.getElementById('summary-time').textContent = time;
+            updateConfirmButton();
+        }
+
+        // Update summary display
+        function updateSummary() {
+            const dateObj = new Date(selectedDate);
+            document.getElementById('summary-date').textContent = 
+                dateObj.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+        }
+
+        // Enable/disable confirm button
+        function updateConfirmButton() {
+            const confirmBtn = document.getElementById('confirm-btn');
+            confirmBtn.disabled = !(selectedBranch && selectedDate && selectedTime);
+        }
+
+        // Confirm appointment
+        async function confirmAppointment() {
+            const token = localStorage.getItem('token');
+            const serviceName = sessionStorage.getItem('selectedService');
+            
+            const confirmBtn = document.getElementById('confirm-btn');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Booking...';
+
+            const appointmentData = {
+                branchId: selectedBranch.id,
+                serviceType: serviceName,
+                appointmentDate: selectedDate,
+                timeSlot: selectedTime
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/appointments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-auth-token': token
+                    },
+                    body: JSON.stringify(appointmentData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Appointment booked successfully!\n\nYou will receive a confirmation email shortly.');
+                    
+                    // Clear session storage
+                    sessionStorage.removeItem('selectedService');
+                    
+                    // Redirect to dashboard
+                    window.location.href = '../User/User-Dashboard.html';
+                } else {
+                    alert('❌ ' + (data.message || 'Failed to book appointment. Please try again.'));
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = 'Confirm Appointment';
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Could not connect to server. Please try again.');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Confirm Appointment';
+            }
+        }
+    </script>
+</body>
+</html>

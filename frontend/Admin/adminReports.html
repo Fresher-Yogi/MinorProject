@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><title>Branch Reports</title>
+    <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link:hover { background-color: #374151; color: white; } </style>
+</head>
+<body class="bg-gray-100 flex h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-800 text-gray-300 flex flex-col">
+        <div class="p-5 text-white text-2xl font-bold border-b border-gray-700">Admin Panel</div>
+        <nav class="flex-1 p-3 space-y-2">
+            <a href="admindashboard.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-tachometer-alt w-8"></i>Dashboard</a>
+            <a href="adminQueueManage.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-users w-8"></i>Manage Queues</a>
+            <a href="adminReports.html" class="flex items-center p-3 rounded-lg bg-gray-700 text-white"><i class="fas fa-chart-bar w-8"></i>Reports</a>
+        </nav>
+        <div class="p-5 border-t border-gray-700"><a href="index.html" class="flex items-center text-red-400 hover:text-red-300"><i class="fas fa-sign-out-alt w-8"></i>Logout</a></div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 p-6">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Generate Reports</h1>
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <div class="flex items-center space-x-4">
+                <div><label class="font-semibold">Start Date:</label><input type="date" class="border rounded p-2 ml-2"></div>
+                <div><label class="font-semibold">End Date:</label><input type="date" class="border rounded p-2 ml-2"></div>
+                <button class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">Generate</button>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="font-semibold text-xl mb-4">Report for Sep 2025</h2>
+            <p>Report generation logic would display here...</p>
+            <!-- Report data and charts would be dynamically inserted here -->
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment - QMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f7fafc; }
+        .loading { display: inline-block; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="index.html" class="text-3xl font-bold text-blue-600">QMS</a>
+            <div class="flex items-center gap-4">
+                <span id="user-name-header" class="font-semibold text-gray-700">Welcome!</span>
+                <a href="../User/User-Dashboard.html" class="text-blue-600 hover:underline">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        <div class="max-w-3xl mx-auto">
+            
+            <!-- Main Form Card -->
+            <div class="bg-white p-8 rounded-2xl shadow-xl" id="form-card">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-calendar-check text-blue-600 mr-2"></i>Book Your Appointment
+                </h1>
+                <p class="text-gray-600 mb-8">Fill the form below to schedule your appointment</p>
+
+                <!-- Error Message -->
+                <div id="error-alert" class="hidden mb-6 bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    <span id="error-message"></span>
+                </div>
+
+                <form id="appointment-form" onsubmit="bookAppointment(event)" class="space-y-6">
+                    
+                    <!-- Branch Selection -->
+                    <div>
+                        <label class="block font-bold text-gray-800 mb-2">
+                            <i class="fas fa-hospital text-blue-600 mr-2"></i>Select Branch
+                        </label>
+                        <select id="branch-id" required class="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">⏳ Loading branches...</option>
+                        </select>
+                        <p class="text-sm text-gray-500 mt-1">Choose your preferred hospital branch</p>
+                    </div>
+
+                    <!-- Service Type -->
+                    <div>
+                        <label class="block font-bold text-gray-800 mb-2">
+                            <i class="fas fa-stethoscope text-green-600 mr-2"></i>Service Type
+                        </label>
+                        <input type="text" id="service-type" placeholder="e.g., Cardiology, General Checkup, Dentistry" required class="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <p class="text-sm text-gray-500 mt-1">What service do you need?</p>
+                    </div>
+
+                    <!-- Date Selection -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block font-bold text-gray-800 mb-2">
+                                <i class="fas fa-calendar text-purple-600 mr-2"></i>Appointment Date
+                            </label>
+                            <input type="date" id="appointment-date" required class="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <p class="text-sm text-gray-500 mt-1">Select your preferred date</p>
+                        </div>
+
+                        <!-- Time Selection -->
+                        <div>
+                            <label class="block font-bold text-gray-800 mb-2">
+                                <i class="fas fa-clock text-orange-600 mr-2"></i>Time Slot
+                            </label>
+                            <input type="time" id="time-slot" required class="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <p class="text-sm text-gray-500 mt-1">Choose your preferred time</p>
+                        </div>
+                    </div>
+
+                    <!-- Additional Notes (Optional) -->
+                    <div>
+                        <label class="block font-bold text-gray-800 mb-2">
+                            <i class="fas fa-file-alt text-indigo-600 mr-2"></i>Additional Notes (Optional)
+                        </label>
+                        <textarea id="notes" placeholder="Any special requirements or medical history we should know?" rows="4" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="submit-btn" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-lg text-lg transition duration-300 transform hover:scale-105">
+                        <i class="fas fa-check-circle mr-2"></i>Confirm Appointment
+                    </button>
+                </form>
+            </div>
+
+            <!-- Success Message -->
+            <div id="success-card" class="hidden max-w-3xl mx-auto bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-8 rounded-2xl shadow-xl">
+                <div class="text-center">
+                    <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">✅ Appointment Booked Successfully!</h2>
+                    <p class="text-lg text-gray-700 mb-6">Your appointment has been confirmed. You will receive a confirmation email shortly.</p>
+                    
+                    <div class="bg-white p-6 rounded-lg mb-8 text-left space-y-3">
+                        <p class="text-gray-700"><strong>Branch:</strong> <span id="confirm-branch" class="text-blue-600"></span></p>
+                        <p class="text-gray-700"><strong>Service:</strong> <span id="confirm-service" class="text-blue-600"></span></p>
+                        <p class="text-gray-700"><strong>Date:</strong> <span id="confirm-date" class="text-blue-600"></span></p>
+                        <p class="text-gray-700"><strong>Time:</strong> <span id="confirm-time" class="text-blue-600"></span></p>
+                        <p class="text-gray-700"><strong>Appointment ID:</strong> <span id="confirm-id" class="text-green-600 font-bold"></span></p>
+                    </div>
+
+                    <div class="flex gap-4 justify-center">
+                        <a href="../User/User-Dashboard.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition">
+                            <i class="fas fa-home mr-2"></i>Back to Dashboard
+                        </a>
+                        <button onclick="bookAnother()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition">
+                            <i class="fas fa-plus mr-2"></i>Book Another
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        // ============================================
+        // Get URL Parameters
+        // ============================================
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                branchId: params.get('branch'),
+                date: params.get('date'),
+                time: params.get('time'),
+                service: params.get('service')
+            };
+        }
+
+        // ============================================
+        // Check User is Logged In
+        // ============================================
+        function checkUserLoggedIn() {
+            const user = localStorage.getItem('user');
+            const token = localStorage.getItem('token');
+
+            if (!user || !token) {
+                alert('⚠️ Please log in first!');
+                window.location.href = '../User/User-Access.html';
+                return false;
+            }
+
+            // Display username
+            const userData = JSON.parse(user);
+            document.getElementById('user-name-header').textContent = `Welcome, ${userData.name}!`;
+            return true;
+        }
+
+        // ============================================
+        // Load Branches from API
+        // ============================================
+        async function loadBranches() {
+            try {
+                const response = await fetch(`${API_URL}/branches`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load branches');
+                }
+
+                const branches = await response.json();
+                const select = document.getElementById('branch-id');
+                
+                // Clear and add options
+                select.innerHTML = '<option value="">Select a branch...</option>';
+
+                if (!branches || branches.length === 0) {
+                    select.innerHTML = '<option value="">No branches available</option>';
+                    showError('No branches available. Please contact support.');
+                    return;
+                }
+
+                branches.forEach(branch => {
+                    const option = document.createElement('option');
+                    option.value = branch.id;
+                    option.textContent = `${branch.name} - ${branch.location}`;
+                    select.appendChild(option);
+                });
+
+                // Set pre-filled branch if coming from Select-Slot.html
+                const urlParams = getUrlParams();
+                if (urlParams.branchId) {
+                    select.value = urlParams.branchId;
+                }
+
+            } catch (error) {
+                console.error('Error loading branches:', error);
+                const select = document.getElementById('branch-id');
+                select.innerHTML = '<option value="">Error loading branches</option>';
+                showError('Could not load branches. Make sure backend is running on port 5000!');
+            }
+        }
+
+        // ============================================
+        // Pre-fill Form from URL Parameters
+        // ============================================
+        function prefillForm() {
+            const urlParams = getUrlParams();
+
+            if (urlParams.service) {
+                document.getElementById('service-type').value = urlParams.service;
+            }
+
+            if (urlParams.date) {
+                document.getElementById('appointment-date').value = urlParams.date;
+            }
+
+            if (urlParams.time) {
+                document.getElementById('time-slot').value = urlParams.time;
+            }
+        }
+
+        // ============================================
+        // Show Error Message
+        // ============================================
+        function showError(message) {
+            const errorAlert = document.getElementById('error-alert');
+            document.getElementById('error-message').textContent = message;
+            errorAlert.classList.remove('hidden');
+            setTimeout(() => {
+                errorAlert.classList.add('hidden');
+            }, 5000);
+        }
+
+        // ============================================
+        // Book Appointment - Main Function
+        // ============================================
+        async function bookAppointment(event) {
+            event.preventDefault();
+
+            // Get form values
+            const branchId = document.getElementById('branch-id').value;
+            const serviceType = document.getElementById('service-type').value;
+            const appointmentDate = document.getElementById('appointment-date').value;
+            const timeSlot = document.getElementById('time-slot').value;
+            const notes = document.getElementById('notes').value;
+            const submitBtn = document.getElementById('submit-btn');
+
+            // Validate
+            if (!branchId || !serviceType || !appointmentDate || !timeSlot) {
+                showError('⚠️ Please fill all required fields!');
+                return;
+            }
+
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Booking...';
+
+            try {
+                // Get token from localStorage
+                const token = localStorage.getItem('token');
+
+                // Send to backend
+                const response = await fetch(`${API_URL}/appointments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-auth-token': token
+                    },
+                    body: JSON.stringify({
+                        branchId: parseInt(branchId),
+                        serviceType: serviceType,
+                        appointmentDate: appointmentDate,
+                        timeSlot: timeSlot,
+                        notes: notes
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Success!
+                    showSuccessMessage(data.appointment);
+                } else {
+                    showError(data.message || 'Failed to book appointment');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Confirm Appointment';
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Network error. Could not book appointment. Make sure backend is running!');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Confirm Appointment';
+            }
+        }
+
+        // ============================================
+        // Show Success Message
+        // ============================================
+        function showSuccessMessage(appointment) {
+            // Hide form
+            document.getElementById('form-card').classList.add('hidden');
+
+            // Show success card
+            document.getElementById('success-card').classList.remove('hidden');
+
+            // Fill success details
+            const branchId = appointment.branchId;
+            const selectedOption = document.getElementById('branch-id').querySelector(`option[value="${branchId}"]`);
+            
+            document.getElementById('confirm-branch').textContent = selectedOption ? selectedOption.textContent : 'Branch';
+            document.getElementById('confirm-service').textContent = appointment.serviceType;
+            document.getElementById('confirm-date').textContent = new Date(appointment.appointmentDate).toLocaleDateString();
+            document.getElementById('confirm-time').textContent = appointment.timeSlot;
+            document.getElementById('confirm-id').textContent = `#${appointment.id}`;
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ============================================
+        // Book Another Appointment
+        // ============================================
+        function bookAnother() {
+            document.getElementById('form-card').classList.remove('hidden');
+            document.getElementById('success-card').classList.add('hidden');
+            document.getElementById('appointment-form').reset();
+            loadBranches();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ============================================
+        // Initialize on Page Load
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            if (checkUserLoggedIn()) {
+                loadBranches();
+                prefillForm(); // ✅ NEW: Pre-fill form from URL
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><title>My Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link:hover, .sidebar-link-active { background-color: #2563eb; color: white; } </style>
+</head>
+<body class="bg-gray-100 flex h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-800 text-gray-300 flex-col hidden sm:flex">
+        <div class="p-5 text-white text-2xl font-bold border-b border-gray-700">QMS</div>
+        <nav class="flex-1 p-3 space-y-2">
+            <a href="User-Dashboard.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-home w-8"></i>Dashboard</a>
+            <a href="User-history.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-history w-8"></i>History</a>
+            <a href="User-Profile.html" class="flex items-center p-3 rounded-lg sidebar-link-active bg-blue-600 text-white"><i class="fas fa-user-cog w-8"></i>Profile</a>
+        </nav>
+        <div class="p-5 border-t border-gray-700">
+             <button onclick="handleLogout()" class="flex items-center text-red-400 hover:text-red-300 w-full cursor-pointer transition">
+                <i class="fas fa-sign-out-alt w-8"></i>
+                <span class="ml-3">Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-4 sm:p-6 overflow-y-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Your Profile</h1>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Personal Information -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 class="text-xl font-semibold mb-4">Personal Information</h2>
+                <form id="profile-form" onsubmit="handleProfileUpdate(event)" class="space-y-4">
+                    <div>
+                        <label class="font-semibold">Full Name</label>
+                        <input type="text" id="profile-name" placeholder="Loading..." class="w-full p-2 border rounded-lg mt-1">
+                    </div>
+                    <div>
+                        <label class="font-semibold">Email Address</label>
+                        <input type="email" id="profile-email" placeholder="Loading..." class="w-full p-2 border rounded-lg mt-1 bg-gray-100 cursor-not-allowed" disabled>
+                    </div>
+                    <div>
+                        <label class="font-semibold">Phone Number</label>
+                        <input type="tel" id="profile-phone" placeholder="e.g., +919876543210" class="w-full p-2 border rounded-lg mt-1">
+                    </div>
+                    <button id="save-profile-btn" type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">Save Changes</button>
+                </form>
+            </div>
+            <!-- Change Password -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 class="text-xl font-semibold mb-4">Change Password</h2>
+                <form class="space-y-4">
+                    <div><label class="font-semibold">Current Password</label><input type="password" class="w-full p-2 border rounded-lg mt-1"></div>
+                    <div><label class="font-semibold">New Password</label><input type="password" class="w-full p-2 border rounded-lg mt-1"></div>
+                    <div><label class="font-semibold">Confirm New Password</label><input type="password" class="w-full p-2 border rounded-lg mt-1"></div>
+                    <button type="submit" class="bg-gray-800 text-white px-5 py-2 rounded-lg hover:bg-gray-900">Update Password</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        // Jab page load ho, user ki profile details fetch karo
+        window.addEventListener('DOMContentLoaded', () => {
+            loadUserProfile();
+        });
+
+        // Function to fetch and display user profile data
+        async function loadUserProfile() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please login first!');
+                window.location.href = 'UserRegLogForm.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/users/me`, {
+                    headers: { 'x-auth-token': token }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch profile.');
+                }
+
+                const user = await response.json();
+
+                // Form fields mein real data daalo
+                document.getElementById('profile-name').value = user.name;
+                document.getElementById('profile-email').value = user.email;
+                document.getElementById('profile-phone').value = user.phone || ''; // Agar phone number nahi hai to khaali chhod do
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Could not load your profile. Please try again.');
+            }
+        }
+
+        // Function to handle profile update when form is submitted
+        async function handleProfileUpdate(event) {
+            event.preventDefault(); // Page ko refresh hone se roko
+
+            const saveBtn = document.getElementById('save-profile-btn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            const token = localStorage.getItem('token');
+            const updatedData = {
+                name: document.getElementById('profile-name').value,
+                phone: document.getElementById('profile-phone').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/users/me`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-auth-token': token
+                    },
+                    body: JSON.stringify(updatedData)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Failed to update profile.');
+                }
+
+                // IMPORTANT: Update user info in localStorage as well
+                localStorage.setItem('user', JSON.stringify(result.user));
+
+                alert('✅ Profile updated successfully!');
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert(`❌ ${error.message}`);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Changes';
+            }
+        }
+        
+        // Logout function
+        function handleLogout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'UserRegLogForm.html';
+        }
+    </script>
+</body>
+</html>
