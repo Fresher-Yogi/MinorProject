@@ -11,10 +11,10 @@
         body { font-family: 'Poppins', sans-serif; background-color: #f0f4f8; }
         .form-container { transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
         .form-hidden { opacity: 0; transform: translateY(20px); position: absolute; pointer-events: none; }
-        .tab-active { border-bottom-color: #16a34a; color: #16a34a; } /* Green for Admin */
+        .tab-active { border-bottom-color: #16a34a; color: #16a34a; }
         .input-group { position: relative; }
         .input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; }
-        .form-input { padding-left: 3rem; width: 100%; padding-top: 0.75rem; padding-bottom: 0.75rem; border-radius: 0.5rem; border: 1px solid #d1d5db; transition: border-color 0.3s, box-shadow 0.3s; }
+        .form-input { padding-left: 3rem; width: 100%; padding-top: 0.75rem; padding-bottom: 0.75rem; border-radius: 0.5rem; border: 1px solid #d1d5db; }
         .form-input:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.4); }
     </style>
 </head>
@@ -22,16 +22,14 @@
 
     <div class="relative w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
         
-        <!-- Info Panel -->
         <div class="w-full md:w-1/2 p-8 sm:p-12 text-white flex flex-col justify-center items-center text-center bg-gradient-to-br from-green-600 to-green-800">
             <h1 class="text-4xl font-bold mb-4">Branch Admin Portal</h1>
             <p class="text-lg mb-6">Manage your branch appointments, services, and queues with efficiency. Login to access your dashboard.</p>
-            <a href="index.html" class="mt-4 border-2 border-white py-2 px-6 rounded-full hover:bg-white hover:text-green-600 transition duration-300">
+            <a href="../index.html" class="mt-4 border-2 border-white py-2 px-6 rounded-full hover:bg-white hover:text-green-600 transition duration-300">
                 <i class="fas fa-arrow-left mr-2"></i> Back to Home
             </a>
         </div>
         
-        <!-- Form Panel -->
         <div class="w-full md:w-1/2 p-8 sm:p-12">
             <div class="flex border-b mb-8">
                 <button id="login-tab" class="flex-1 py-3 text-lg font-semibold text-center border-b-4 tab-active" onclick="showForm('login')">Login</button>
@@ -42,105 +40,129 @@
                 <!-- Login Form -->
                 <div id="login-form" class="form-container">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Admin Login</h2>
-                    <!-- <form action="admin-dashboard.html"> -->
-                        <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
-                        <div class="mb-5 input-group"><i class="fas fa-envelope input-icon"></i><input type="email" placeholder="Admin Email" class="form-input" required></div>
-                        <div class="mb-5 input-group"><i class="fas fa-lock input-icon"></i><input type="password" placeholder="Password" class="form-input" required></div>
-                        
-                        <!-- Forgot Password Link -->
-                        <div class="text-right mb-6">
-                            <a href="forgot-password.html" class="text-sm text-green-600 hover:underline">Forgot Password?</a>
+                    <form onsubmit="handleAdminLogin(event)">
+                        <div class="mb-5 input-group">
+                            <i class="fas fa-envelope input-icon"></i>
+                            <!-- ✅ FIX: ADDED ID HERE -->
+                            <input type="email" id="login-email" placeholder="Admin Email" class="form-input" required>
                         </div>
-                        
-                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition duration-300">Login to Dashboard</button>
+                        <div class="mb-5 input-group">
+                            <i class="fas fa-lock input-icon"></i>
+                            <!-- ✅ FIX: ADDED ID HERE -->
+                            <input type="password" id="login-password" placeholder="Password" class="form-input" required>
+                        </div>
+                        <div class="text-right mb-6"><a href="forgot-password.html" class="text-sm text-green-600 hover:underline">Forgot Password?</a></div>
+                        <!-- ✅ FIX: ADDED ID TO BUTTON -->
+                        <button id="login-btn" type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition duration-300">Login to Dashboard</button>
                     </form>
                 </div>
                 
                 <!-- Registration Form -->
                 <div id="register-form" class="form-container form-hidden">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Register Your Branch</h2>
-                    <form action="#">
-                        <div class="mb-5 input-group"><i class="fas fa-user-tie input-icon"></i><input type="text" placeholder="Your Full Name" class="form-input" required></div>
-                        <div class="mb-5 input-group"><i class="fas fa-store input-icon"></i><input type="text" placeholder="Branch Name / Service Center Name" class="form-input" required></div>
-                        <div class="mb-5 input-group"><i class="fas fa-map-marker-alt input-icon"></i><input type="text" placeholder="Branch Location" class="form-input" required></div>
-                        <div class="mb-5 input-group"><i class="fas fa-envelope input-icon"></i><input type="email" placeholder="Admin Email" class="form-input" required></div>
-                        <div class="mb-5 input-group"><i class="fas fa-lock input-icon"></i><input type="password" placeholder="Create Password" class="form-input" required></div>
+                    <form onsubmit="handleAdminRegister(event)">
+                        <div class="mb-5 input-group"><i class="fas fa-user-tie input-icon"></i><input id="reg-name" type="text" placeholder="Your Full Name" class="form-input" required></div>
+                        <div class="mb-5 input-group"><i class="fas fa-envelope input-icon"></i><input id="reg-email" type="email" placeholder="Admin Email" class="form-input" required></div>
+                        <div class="mb-5 input-group"><i class="fas fa-lock input-icon"></i><input id="reg-password" type="password" placeholder="Create Password" class="form-input" required></div>
                         <p class="text-xs text-gray-500 mb-6">After registration, your account will be pending approval from a Super Admin.</p>
-                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition duration-300">Register for Approval</button>
+                        <button id="reg-btn" type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition duration-300">Register for Approval</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
+    <script>
+        const API_URL = 'http://localhost:5000/api';
 
-
-<script>
-    // --- FINAL SCRIPT FOR: frontend/Admin/adminaccess.html ---
-    const API_URL = 'http://localhost:5000/api';
-
-    // --- Tab Switching Logic (No changes here) ---
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
-    const loginTab = document.getElementById('login-tab');
-    const registerTab = document.getElementById('register-tab');
-
-    function showForm(formName) {
-        if (formName === 'login') {
-            loginForm.classList.remove('form-hidden');
-            registerForm.classList.add('form-hidden');
-            loginTab.classList.add('tab-active');
-            registerTab.classList.remove('tab-active');
-        } else {
-            loginForm.classList.add('form-hidden');
-            registerForm.classList.remove('form-hidden');
-            loginTab.classList.remove('tab-active');
-            registerTab.classList.add('tab-active');
-        }
-    }
-
-    // --- NEW: REAL ADMIN LOGIN LOGIC ---
-    async function handleAdminLogin(event) {
-        event.preventDefault();
-        
-        const loginBtn = event.target.querySelector('button[type="submit"]');
-        loginBtn.disabled = true;
-        loginBtn.textContent = 'Logging in...';
-
-        const email = event.target.elements[0].value;
-        const password = event.target.elements[1].value;
-
-        try {
-            const response = await fetch(`${API_URL}/auth/admin-login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                alert('✅ Admin login successful!');
-                localStorage.setItem('token', data.token); // IMPORTANT: Save the token
-                localStorage.setItem('user', JSON.stringify(data.user));
-                window.location.href = 'admindashboard.html';
+        function showForm(formName) {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const loginTab = document.getElementById('login-tab');
+            const registerTab = document.getElementById('register-tab');
+            if (formName === 'login') {
+                loginForm.classList.remove('form-hidden');
+                registerForm.classList.add('form-hidden');
+                loginTab.classList.add('tab-active');
+                registerTab.classList.remove('tab-active');
             } else {
-                alert(`❌ ${data.message || 'Login failed. Please check credentials.'}`);
+                loginForm.classList.add('form-hidden');
+                registerForm.classList.remove('form-hidden');
+                loginTab.classList.remove('tab-active');
+                registerTab.classList.add('tab-active');
+            }
+        }
+
+        async function handleAdminLogin(event) {
+            event.preventDefault();
+            const loginBtn = document.getElementById('login-btn');
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
+
+            // ✅ FIX: Correctly gets values from the form with IDs
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/auth/admin-login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Login successful!');
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+
+                    if (data.user.role === 'superadmin') {
+                        window.location.href = '../SuperAdmin/superadmin_dashboard.html';
+                    } else {
+                        window.location.href = 'admindashboard.html';
+                    }
+                } else {
+                    throw new Error(data.message || 'Login failed.');
+                }
+            } catch (error) {
+                alert(`❌ ${error.message}`);
+            } finally {
+                // Ensure the button is always re-enabled
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Login to Dashboard';
             }
-
-        } catch (error) {
-            console.error('Error:', error);
-            alert('❌ Could not connect to the server. Please try again.');
-            loginBtn.disabled = false;
-            loginBtn.textContent = 'Login to Dashboard';
         }
-    }
-</script>
 
+        async function handleAdminRegister(event) {
+            event.preventDefault();
+            const regBtn = document.getElementById('reg-btn');
+            regBtn.disabled = true;
+            regBtn.textContent = 'Submitting...';
 
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
 
-
+            try {
+                const response = await fetch(`${API_URL}/auth/admin-register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message);
+                alert(`✅ ${data.message}`);
+                showForm('login');
+            } catch (error) {
+                alert(`❌ ${error.message}`);
+            } finally {
+                regBtn.disabled = false;
+                regBtn.textContent = 'Register for Approval';
+            }
+        }
+    </script>
 </body>
 </html>
+
+
+

@@ -21,11 +21,21 @@ const User = sequelize.define('User', {
   },
   role: {
     type: DataTypes.STRING,
-    defaultValue: 'user'
+    defaultValue: 'user' // By default, anyone who registers is a 'user'
+  },
+  
+  // --- ✅ NEW FIELD ADDED ---
+  // This field will track the status of an admin's account
+  status: {
+    type: DataTypes.STRING,
+    // For normal users, the status will always be 'approved'.
+    // For admins, it can be 'pending_approval', 'approved', or 'rejected'.
+    defaultValue: 'approved'
   }
+  // --- ✅ END OF NEW FIELD ---
+
 }, {
-  // Other model options go here
-  tableName: 'users' // Important: This tells Sequelize to use your 'users' table
+  tableName: 'users' // This ensures Sequelize uses your existing 'users' table
 });
 
 module.exports = User;

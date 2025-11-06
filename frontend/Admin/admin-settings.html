@@ -3,60 +3,104 @@
 <head>
     <meta charset="UTF-8"><title>Branch Settings</title>
     <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link:hover, .sidebar-link-active { background-color: #2563eb; color: white; } </style>
+    <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link-active { background-color: #2563eb; color: white; } </style>
 </head>
 <body class="bg-gray-100 flex h-screen">
 
     <!-- Sidebar -->
     <aside class="w-64 bg-gray-800 text-gray-300 flex flex-col">
-        <div class="p-5 text-white text-2xl font-bold border-b border-gray-700">Admin Panel</div>
-        <nav class="flex-1 p-3 space-y-2">
-            <a href="admindashboard.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-tachometer-alt w-8"></i>Dashboard</a>
-            <a href="adminQueueManage.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-users w-8"></i>Manage Queues</a>
-            <a href="adminReports.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-chart-bar w-8"></i>Reports</a>
-            <a href="admin-settings.html" class="flex items-center p-3 rounded-lg sidebar-link-active bg-blue-600 text-white"><i class="fas fa-cogs w-8"></i>Settings</a>
-        </nav>
-        <div class="p-5 border-t border-gray-700"><a href="index.html" class="flex items-center text-red-400 hover:text-red-300"><i class="fas fa-sign-out-alt w-8"></i>Logout</a></div>
+        <!-- ... sidebar links ... -->
     </aside>
 
     <!-- Main Content -->
     <main class="flex-1 p-6 overflow-y-auto">
         <h1 class="text-3xl font-bold text-gray-800 mb-6">Branch Settings</h1>
-        <div class="space-y-6">
-            <!-- Working Hours -->
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="text-xl font-semibold mb-4">Working Hours & Breaks</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div><label class="font-semibold">Opening Time</label><input type="time" value="09:00" class="w-full p-2 border rounded-lg mt-1"></div>
-                    <div><label class="font-semibold">Closing Time</label><input type="time" value="17:00" class="w-full p-2 border rounded-lg mt-1"></div>
-                    <div><label class="font-semibold">Break Time</label><input type="text" value="01:00 PM - 02:00 PM" class="w-full p-2 border rounded-lg mt-1"></div>
-                </div>
-            </div>
-            <!-- Service Slot Duration -->
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="text-xl font-semibold mb-4">Service Slot Duration</h2>
-                <p class="text-sm text-gray-500 mb-2">Define the length of each appointment slot.</p>
-                <select class="p-2 border rounded-lg">
-                    <option>10 minutes</option>
-                    <option selected>15 minutes</option>
-                    <option>20 minutes</option>
-                    <option>30 minutes</option>
-                </select>
-            </div>
-            <!-- Holidays -->
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="text-xl font-semibold mb-4">Manage Holidays</h2>
-                <p class="text-sm text-gray-500 mb-4">Add dates when the branch will be closed. Users won't be able to book on these days.</p>
-                <div class="flex items-center gap-4">
-                    <input type="date" class="p-2 border rounded-lg">
-                    <input type="text" placeholder="Holiday Name (e.g., Christmas Day)" class="flex-1 p-2 border rounded-lg">
-                    <button class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900">Add Holiday</button>
-                </div>
-            </div>
-             <div class="text-right">
-                <button class="bg-blue-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-700 transition">Save All Settings</button>
-            </div>
+        <div id="settings-form-container" class="space-y-6">
+            <!-- Loading state -->
+            <p>Loading settings...</p>
         </div>
     </main>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        window.addEventListener('DOMContentLoaded', loadBranchSettings);
+
+        async function loadBranchSettings() {
+            const token = localStorage.getItem('token');
+            const container = document.getElementById('settings-form-container');
+            if (!token) { /* redirect to login */ return; }
+
+            try {
+                const response = await fetch(`${API_URL}/branches/my-branch`, {
+                    headers: { 'x-auth-token': token }
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.message);
+                }
+                const branch = await response.json();
+                
+                // Render the form with the fetched data
+                container.innerHTML = `
+                    <form onsubmit="handleSettingsUpdate(event)">
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h2 class="text-xl font-semibold mb-4">Working Hours</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="font-semibold">Opening Time</label>
+                                    <input type="time" id="openingTime" value="${branch.openingTime || '09:00'}" class="w-full p-2 border rounded-lg mt-1">
+                                </div>
+                                <div>
+                                    <label class="font-semibold">Closing Time</label>
+                                    <input type="time" id="closingTime" value="${branch.closingTime || '17:00'}" class="w-full p-2 border rounded-lg mt-1">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow mt-6">
+                            <h2 class="text-xl font-semibold mb-4">Service Slot Duration</h2>
+                            <select id="slotDuration" class="p-2 border rounded-lg">
+                                <option value="10" ${branch.slotDuration == 10 ? 'selected' : ''}>10 minutes</option>
+                                <option value="15" ${branch.slotDuration == 15 ? 'selected' : ''}>15 minutes</option>
+                                <option value="20" ${branch.slotDuration == 20 ? 'selected' : ''}>20 minutes</option>
+                                <option value="30" ${branch.slotDuration == 30 ? 'selected' : ''}>30 minutes</option>
+                            </select>
+                        </div>
+                        <div class="text-right mt-6">
+                            <button type="submit" class="bg-blue-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-700 transition">Save All Settings</button>
+                        </div>
+                    </form>
+                `;
+            } catch (error) {
+                container.innerHTML = `<div class="bg-red-100 text-red-700 p-4 rounded-lg">${error.message}</div>`;
+            }
+        }
+
+        async function handleSettingsUpdate(event) {
+            event.preventDefault();
+            const token = localStorage.getItem('token');
+
+            const updatedSettings = {
+                openingTime: document.getElementById('openingTime').value,
+                closingTime: document.getElementById('closingTime').value,
+                slotDuration: parseInt(document.getElementById('slotDuration').value)
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/branches/my-branch`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
+                    body: JSON.stringify(updatedSettings)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+                
+                alert('✅ ' + result.message);
+                loadBranchSettings(); // Refresh settings
+            } catch (error) {
+                alert('❌ ' + error.message);
+            }
+        }
+    </script>
 </body>
 </html>
