@@ -1,3 +1,5 @@
+// --- FINAL, UPDATED CODE for backend/src/routes/userRoutes.js ---
+
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
@@ -8,7 +10,6 @@ const User = require('../models/user');
 // @access  Private (Requires token)
 router.get('/me', authMiddleware, async (req, res) => {
   try {
-    // Find user by Primary Key (ID) from the token, but exclude the password field
     const user = await User.findByPk(req.user.id, {
       attributes: { exclude: ['password'] }
     });
@@ -24,11 +25,19 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+// --- 🛑 MODIFIED ROUTE: Now requires Super Admin access ---
 // @route   GET /api/users
-// @desc    Get all users (for admin purposes)
-// @access  Public (Temporary - should be admin-only)
-router.get('/', async (req, res) => {
+// @desc    Get all users (for Super Admin purposes)
+// @access  Private (Super Admin Only)
+router.get('/', authMiddleware, async (req, res) => {
   try {
+    // Check if the user making the request is a Super Admin
+    const requester = await User.findByPk(req.user.id);
+    if (!requester || requester.role !== 'superadmin') {
+        return res.status(403).json({ message: 'Access Denied. This resource is for Super Admins only.' });
+    }
+
+    // If authorized, fetch all users
     const users = await User.findAll({
       attributes: { exclude: ['password'] }
     });
@@ -40,31 +49,23 @@ router.get('/', async (req, res) => {
 });
 
 
-// ✅✅✅ START: NEW CODE TO ADD ✅✅✅
 // @route   PUT /api/users/me
 // @desc    Update current user's profile
 // @access  Private (Requires token)
 router.put('/me', authMiddleware, async (req, res) => {
   try {
-    // Get the new details from the request body
     const { name, phone } = req.body;
-
-    // Find the user by their ID (from the token)
     const user = await User.findByPk(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update user's details
-    // If a new name is provided, update it. Otherwise, keep the old name.
     user.name = name || user.name;
-    user.phone = phone; // We allow setting phone to empty string
+    user.phone = phone;
 
-    // Save the changes to the database
     await user.save();
 
-    // Send a success response with the updated user info
     res.json({
         message: 'Profile updated successfully!',
         user: {
@@ -81,7 +82,28 @@ router.put('/me', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
-// ✅✅✅ END: NEW CODE TO ADD ✅✅✅
 
+// @route   GET /api/users/admins
+// @desc    Get all approved admin users (for Super Admin)
+// @access  Private (Super Admin Only)
+router.get('/admins', authMiddleware, async (req, res) => {
+    try {
+        const requester = await User.findByPk(req.user.id);
+        if (!requester || requester.role !== 'superadmin') {
+            return res.status(403).json({ message: 'Access Denied. Only Super Admins can view this.' });
+        }
+        const admins = await User.findAll({
+            where: {
+                role: 'admin',
+                status: 'approved'
+            },
+            attributes: ['id', 'name', 'email']
+        });
+        res.json(admins);
+    } catch (error) {
+        console.error("Error fetching admins:", error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
 
 module.exports = router;

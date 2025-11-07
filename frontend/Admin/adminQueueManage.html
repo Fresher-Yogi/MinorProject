@@ -1,36 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><title>Manage Queues</title>
-    <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link:hover { background-color: #374151; color: white; } </style>
+    <meta charset="UTF-8"><title>Manage Live Queue</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- ✅ Socket.IO Client -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style> 
+        body { font-family: 'Poppins', sans-serif; } 
+        .sidebar-link-active { background-color: #2563eb; color: white; }
+        .queue-card {
+            border-left: 5px solid #3b82f6; /* Blue-500 */
+        }
+        .currently-serving {
+            animation: pulse-bg 2s infinite;
+        }
+        @keyframes pulse-bg {
+            0% { background-color: #dbeafe; } /* Blue-100 */
+            50% { background-color: #bfdbfe; } /* Blue-200 */
+            100% { background-color: #dbeafe; } /* Blue-100 */
+        }
+    </style>
 </head>
 <body class="bg-gray-100 flex h-screen">
+
     <!-- Sidebar -->
     <aside class="w-64 bg-gray-800 text-gray-300 flex flex-col">
         <div class="p-5 text-white text-2xl font-bold border-b border-gray-700">Admin Panel</div>
         <nav class="flex-1 p-3 space-y-2">
-            <a href="admindashboard.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-tachometer-alt w-8"></i>Dashboard</a>
-            <a href="adminQueueManage.html" class="flex items-center p-3 rounded-lg bg-gray-700 text-white"><i class="fas fa-users w-8"></i>Manage Queues</a>
-            <a href="adminReports.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-chart-bar w-8"></i>Reports</a>
+            <a href="admindashboard.html" class="flex items-center p-3 rounded-lg hover:bg-gray-700"><i class="fas fa-tachometer-alt w-8"></i>Dashboard</a>
+            <a href="adminQueueManage.html" class="flex items-center p-3 rounded-lg sidebar-link-active bg-blue-600"><i class="fas fa-users w-8"></i>Manage Queues</a>
+            <a href="adminReports.html" class="flex items-center p-3 rounded-lg hover:bg-gray-700"><i class="fas fa-chart-bar w-8"></i>Reports</a>
         </nav>
-        <div class="p-5 border-t border-gray-700"><a href="index.html" class="flex items-center text-red-400 hover:text-red-300"><i class="fas fa-sign-out-alt w-8"></i>Logout</a></div>
+        <div class="p-5 border-t border-gray-700">
+            <button onclick="logout()" class="flex items-center text-red-400 hover:text-red-300 w-full"><i class="fas fa-sign-out-alt w-8"></i>Logout</button>
+        </div>
     </aside>
 
     <!-- Main Content -->
-    <div class="flex-1 p-6">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6">Live Queue Status</h1>
-        <div class="bg-white p-6 rounded-lg shadow overflow-x-auto">
-            <table class="w-full text-left">
-                <thead class="bg-gray-50"><tr class="border-b"><th class="py-3 px-4">Service</th><th class="py-3 px-4">Waiting</th><th class="py-3 px-4">Current Ticket</th><th class="py-3 px-4">Avg. Wait</th><th class="py-3 px-4">Actions</th></tr></thead>
-                <tbody>
-                    <tr class="border-b"><td class="py-4 px-4">Cardiology</td><td class="py-4 px-4">8</td><td class="py-4 px-4 font-mono">C-105</td><td class="py-4 px-4">15 min</td><td class="py-4 px-4"><button class="text-blue-500 hover:underline">View Details</button></td></tr>
-                    <tr class="border-b"><td class="py-4 px-4">General Checkup</td><td class="py-4 px-4">12</td><td class="py-4 px-4 font-mono">G-210</td><td class="py-4 px-4">25 min</td><td class="py-4 px-4"><button class="text-blue-500 hover:underline">View Details</button></td></tr>
-                    <tr class="border-b"><td class="py-4 px-4">Pediatrics</td><td class="py-4 px-4">5</td><td class="py-4 px-4 font-mono">P-055</td><td class="py-4 px-4">10 min</td><td class="py-4 px-4"><button class="text-blue-500 hover:underline">View Details</button></td></tr>
-                    <tr><td class="py-4 px-4">Neurology</td><td class="py-4 px-4">3</td><td class="py-4 px-4 font-mono">N-012</td><td class="py-4 px-4">8 min</td><td class="py-4 px-4"><button class="text-blue-500 hover:underline">View Details</button></td></tr>
-                </tbody>
-            </table>
+    <main class="flex-1 p-6 overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Live Queue Status</h1>
+            <div class="text-lg font-semibold text-gray-700">
+                <i class="far fa-calendar-alt mr-2"></i><span id="current-date"></span>
+            </div>
         </div>
-    </div>
+
+        <!-- This is where the dynamic queue cards will be inserted -->
+        <div id="queue-container" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <!-- Loading State -->
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
+                <p class="mt-4 text-gray-600">Loading today's queue...</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = 'http://localhost:5000'; // Base URL for Socket.io and API
+        const socket = io(API_URL);
+
+        // --- 1. REAL-TIME SETUP ---
+        socket.on('connect', () => console.log('✅ Socket connected for live updates!'));
+        socket.on('appointmentUpdated', (updatedAppointment) => {
+            console.log('⚡ Real-time update received!', updatedAppointment);
+            // Simply re-load all data to ensure UI is perfectly in sync
+            loadQueueData(); 
+        });
+
+        // --- 2. INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // Check for admin login
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!token || !user || user.role !== 'admin') {
+                alert('Access Denied. Please log in as a Branch Admin.');
+                window.location.href = 'adminaccess.html';
+                return;
+            }
+
+            // Display today's date
+            document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            // Load the initial queue data
+            loadQueueData();
+        });
+
+        // --- 3. DATA FETCHING & PROCESSING ---
+        async function loadQueueData() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_URL}/api/appointments`, {
+                    headers: { 'x-auth-token': token }
+                });
+                if (!response.ok) throw new Error('Failed to fetch appointments');
+                
+                const allAppointments = await response.json();
+
+                // Get today's date in YYYY-MM-DD format for comparison
+                const today = new Date().toISOString().slice(0, 10);
+
+                // Filter for today's pending appointments only
+                const todaysQueue = allAppointments.filter(apt => 
+                    apt.appointmentDate === today && apt.status === 'pending'
+                ).sort((a, b) => a.timeSlot.localeCompare(b.timeSlot)); // Sort by time
+
+                // Group the queue by service type
+                const groupedByService = todaysQueue.reduce((acc, apt) => {
+                    (acc[apt.serviceType] = acc[apt.serviceType] || []).push(apt);
+                    return acc;
+                }, {});
+
+                renderQueues(groupedByService);
+
+            } catch (error) {
+                document.getElementById('queue-container').innerHTML = `<div class="col-span-full bg-red-100 text-red-700 p-4 rounded-lg">${error.message}</div>`;
+            }
+        }
+
+        // --- 4. RENDERING THE UI ---
+        function renderQueues(groupedData) {
+            const container = document.getElementById('queue-container');
+            
+            if (Object.keys(groupedData).length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-12"><i class="fas fa-check-circle text-4xl text-green-500"></i><p class="mt-4 text-gray-600">The queue is empty for today!</p></div>`;
+                return;
+            }
+
+            container.innerHTML = Object.entries(groupedData).map(([service, appointments]) => {
+                const currentlyServing = appointments[0]; // The first person in the sorted list
+                const upNext = appointments.slice(1); // Everyone else
+
+                return `
+                    <div class="bg-white p-5 rounded-lg shadow-md queue-card">
+                        <!-- Queue Header -->
+                        <div class="border-b pb-3 mb-4">
+                            <h2 class="text-2xl font-bold text-gray-800">${service}</h2>
+                            <p class="text-gray-500 font-semibold">${appointments.length} person(s) waiting</p>
+                        </div>
+
+                        <!-- Currently Serving -->
+                        ${currentlyServing ? `
+                        <div class="p-4 rounded-lg mb-4 currently-serving">
+                            <p class="text-sm font-bold text-blue-700">NOW SERVING</p>
+                            <div class="flex items-center justify-between mt-1">
+                                <div>
+                                    <p class="text-lg font-bold">User #${currentlyServing.userId}</p>
+                                    <p class="text-sm text-gray-600">${currentlyServing.timeSlot}</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="updateStatus(${currentlyServing.id}, 'completed')" class="bg-green-500 text-white w-10 h-10 rounded-full hover:bg-green-600 transition" title="Mark as Completed"><i class="fas fa-check"></i></button>
+                                    <button onclick="updateStatus(${currentlyServing.id}, 'cancelled')" class="bg-red-500 text-white w-10 h-10 rounded-full hover:bg-red-600 transition" title="Mark as Cancelled"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- Up Next List -->
+                        <div class="space-y-2">
+                             <h3 class="font-bold text-gray-600 mt-4">Up Next:</h3>
+                             ${upNext.length > 0 ? upNext.map(apt => `
+                                <div class="bg-gray-50 p-3 rounded-md flex justify-between items-center">
+                                    <p class="font-semibold">User #${apt.userId}</p>
+                                    <p class="text-sm text-gray-500">${apt.timeSlot}</p>
+                                </div>
+                             `).join('') : '<p class="text-sm text-gray-400 p-3">No one else is in this queue.</p>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- 5. USER ACTIONS ---
+        async function updateStatus(id, status) {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_URL}/api/appointments/${id}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
+                    body: JSON.stringify({ status })
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.message || 'Failed to update status');
+                }
+                // The socket listener will automatically handle the UI refresh
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // --- 6. UTILITY ---
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'adminaccess.html';
+        }
+    </script>
 </body>
 </html>

@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - QMS</title>
+    <title>Branch Admin Dashboard - QMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- ✅ Add Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link-active { background-color: #2563eb; color: white; } </style>
 </head>
 <body class="bg-gray-100 flex h-screen">
 
+    <!-- Sidebar -->
     <aside class="w-64 bg-gray-800 text-gray-300 flex flex-col">
         <div class="p-5 text-white text-2xl font-bold border-b border-gray-700">Admin Panel</div>
         <nav class="flex-1 p-3 space-y-2">
@@ -31,33 +34,49 @@
         </div>
     </aside>
 
+    <!-- Main Content -->
     <div class="flex-1 flex flex-col">
         <header class="bg-white shadow p-4 flex justify-between items-center">
-            <h1 class="text-2xl font-semibold text-gray-800">Admin Dashboard</h1>
+            <h1 class="text-2xl font-semibold text-gray-800">Branch Dashboard</h1>
             <span id="admin-name" class="font-semibold">Welcome, Admin!</span>
         </header>
 
         <main class="flex-1 p-6 overflow-y-auto">
-            <div id="stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <!-- Stats cards will be loaded here -->
+             <!-- Stats Cards -->
+            <div id="stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-blue-100 p-6 rounded-lg shadow flex items-center justify-between">
+                    <div><h3 class="text-xl font-bold text-blue-800" id="total-apt">0</h3><p class="text-blue-600">Total Appointments</p></div>
+                    <i class="fas fa-calendar-check fa-2x text-blue-400"></i>
+                </div>
+                <div class="bg-yellow-100 p-6 rounded-lg shadow flex items-center justify-between">
+                    <div><h3 class="text-xl font-bold text-yellow-800" id="pending-apt">0</h3><p class="text-yellow-600">Pending / Today</p></div>
+                    <i class="fas fa-clock fa-2x text-yellow-400"></i>
+                </div>
+                <div class="bg-green-100 p-6 rounded-lg shadow flex items-center justify-between">
+                    <div><h3 class="text-xl font-bold text-green-800" id="completed-apt">0</h3><p class="text-green-600">Completed</p></div>
+                    <i class="fas fa-check-circle fa-2x text-green-400"></i>
+                </div>
             </div>
+
             <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="font-bold text-xl mb-4">📋 All Appointments</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-xl">📋 Recent Appointments</h2>
+                    <button onclick="loadDashboard()" class="text-blue-600 hover:underline text-sm"><i class="fas fa-sync mr-1"></i>Refresh</button>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="py-3 px-4">ID</th>
-                                <th class="py-3 px-4">User</th>
+                                <th class="py-3 px-4">User ID</th>
                                 <th class="py-3 px-4">Service</th>
-                                <th class="py-3 px-4">Branch</th>
                                 <th class="py-3 px-4">Date & Time</th>
                                 <th class="py-3 px-4">Status</th>
                                 <th class="py-3 px-4">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="appointments-table">
-                            <!-- Data will be loaded here by JavaScript -->
+                            <tr><td colspan="6" class="py-8 px-4 text-center"><i class="fas fa-spinner fa-spin text-2xl text-blue-500"></i></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -66,110 +85,93 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:5000/api';
+        const API_URL = 'http://localhost:5000'; // Base URL for Socket.io
+        const socket = io(API_URL);
+
+        // Listen for real-time updates
+        socket.on('appointmentUpdated', (updatedApt) => {
+            // Play a subtle sound notification (optional)
+            // Beep code here if desired
+            // Refresh data
+            loadDashboard();
+        });
 
         async function loadDashboard() {
             const token = localStorage.getItem('token');
             const adminUser = JSON.parse(localStorage.getItem('user'));
             if (!token || !adminUser || (adminUser.role !== 'admin' && adminUser.role !== 'superadmin')) {
-                alert('Access Denied. Please login as an admin.');
                 window.location.href = 'adminaccess.html';
                 return;
             }
             document.getElementById('admin-name').textContent = `Welcome, ${adminUser.name}!`;
 
             try {
-                const headers = { 'x-auth-token': token };
-                const [appointmentsRes, branchesRes, usersRes] = await Promise.all([
-                    fetch(`${API_URL}/appointments`, { headers }),
-                    fetch(`${API_URL}/branches`, { headers }),
-                    fetch(`${API_URL}/users`, { headers })
-                ]);
+                const response = await fetch(`${API_URL}/api/appointments`, {
+                    headers: { 'x-auth-token': token }
+                });
 
-                if (!appointmentsRes.ok || !branchesRes.ok || !usersRes.ok) throw new Error('Failed to fetch dashboard data.');
-
-                const appointments = await appointmentsRes.json();
-                const branches = await branchesRes.json();
-                const users = await usersRes.json();
-                const branchMap = new Map(branches.map(b => [b.id, b.name]));
-                const userMap = new Map(users.map(u => [u.id, u.name]));
-
-                displayStats(appointments, branches);
-                displayAppointments(appointments, branchMap, userMap);
+                if (!response.ok) throw new Error('Failed to fetch data.');
+                const appointments = await response.json();
+                
+                updateStats(appointments);
+                displayAppointments(appointments);
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('appointments-table').innerHTML = `<tr><td colspan="7" class="py-8 px-4 text-center text-red-500">❌ Error loading data. Your session might have expired. Please log out and log in again.</td></tr>`;
+                document.getElementById('appointments-table').innerHTML = `<tr><td colspan="6" class="py-8 px-4 text-center text-red-500">❌ Failed to load appointments.</td></tr>`;
             }
         }
         
-        function displayStats(appointments, branches) {
-            // Stats logic remains the same
+        function updateStats(appointments) {
+            document.getElementById('total-apt').textContent = appointments.length;
+            document.getElementById('pending-apt').textContent = appointments.filter(a => a.status === 'pending').length;
+            document.getElementById('completed-apt').textContent = appointments.filter(a => a.status === 'completed').length;
         }
 
-        function displayAppointments(appointments, branchMap, userMap) {
+        function displayAppointments(appointments) {
             const table = document.getElementById('appointments-table');
-            if (!appointments || appointments.length === 0) {
-                table.innerHTML = `<tr><td colspan="7" class="py-8 px-4 text-center text-gray-500">No appointments found.</td></tr>`;
+            if (appointments.length === 0) {
+                table.innerHTML = `<tr><td colspan="6" class="py-8 px-4 text-center text-gray-500">No appointments found for your branch.</td></tr>`;
                 return;
             }
-            // Sort appointments to show pending ones first
-            const sortedAppointments = appointments.sort((a, b) => (a.status === 'pending' ? -1 : 1) - (b.status === 'pending' ? -1 : 1) || new Date(b.createdAt) - new Date(a.createdAt));
             
-            table.innerHTML = sortedAppointments.map(a => {
-                const isPending = a.status === 'pending';
+            // Sort by date desc, then status pending first
+            appointments.sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate));
+            
+            table.innerHTML = appointments.map(a => {
+                const statusColor = a.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                    a.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
+                
                 return `
-                <tr class="border-b hover:bg-gray-50">
+                <tr class="border-b hover:bg-gray-50 transition">
                     <td class="py-4 px-4 font-bold">#${a.id}</td>
-                    <td class="py-4 px-4">${userMap.get(a.userId) || 'Unknown User'}</td>
+                    <td class="py-4 px-4">User #${a.userId}</td>
                     <td class="py-4 px-4">${a.serviceType}</td>
-                    <td class="py-4 px-4">${branchMap.get(a.branchId) || 'Unknown'}</td>
                     <td class="py-4 px-4">${a.appointmentDate} at ${a.timeSlot}</td>
-                    <td class="py-4 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold ${
-                        a.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        a.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                    }">${a.status.toUpperCase()}</span></td>
-                    <td class="py-4 px-4 space-x-2">
-                        ${isPending ? `
-                            <button onclick="updateAppointmentStatus(${a.id}, 'completed')" title="Mark as Completed" class="text-green-500 hover:text-green-700"><i class="fas fa-check"></i></button>
-                            <button onclick="updateAppointmentStatus(${a.id}, 'cancelled')" title="Cancel Appointment" class="text-red-500 hover:text-red-700"><i class="fas fa-times"></i></button>
-                        ` : `
-                            <span class="text-gray-400 text-sm">Done</span>
-                        `}
+                    <td class="py-4 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold ${statusColor}">${a.status.toUpperCase()}</span></td>
+                    <td class="py-4 px-4 flex space-x-2">
+                        ${a.status === 'pending' ? `
+                        <button onclick="updateStatus(${a.id}, 'completed')" title="Complete" class="bg-green-50 text-green-600 hover:bg-green-100 p-2 rounded-full transition"><i class="fas fa-check"></i></button>
+                        <button onclick="updateStatus(${a.id}, 'cancelled')" title="Cancel" class="bg-red-50 text-red-600 hover:bg-red-100 p-2 rounded-full transition"><i class="fas fa-times"></i></button>
+                        ` : `<span class="text-gray-400 text-sm italic">No actions</span>`}
                     </td>
                 </tr>
             `}).join('');
         }
 
-        // --- NEW FUNCTION TO UPDATE STATUS ---
-        async function updateAppointmentStatus(appointmentId, newStatus) {
-            if (!confirm(`Are you sure you want to mark appointment #${appointmentId} as ${newStatus}?`)) {
-                return;
-            }
-
+        async function updateStatus(id, status) {
+            if (!confirm(`Mark appointment #${id} as ${status}?`)) return;
             const token = localStorage.getItem('token');
             try {
-                const response = await fetch(`${API_URL}/appointments/${appointmentId}/status`, {
+                const res = await fetch(`${API_URL}/api/appointments/${id}/status`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-auth-token': token
-                    },
-                    body: JSON.stringify({ status: newStatus })
+                    headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
+                    body: JSON.stringify({ status })
                 });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.message || 'Failed to update status.');
-                }
-
-                alert(`✅ ${result.message}`);
-                loadDashboard(); // Refresh the dashboard to show the change
-
-            } catch (error) {
-                console.error('Error updating status:', error);
-                alert(`❌ ${error.message}`);
+                if (!res.ok) throw new Error('Update failed');
+                // Socket.IO will trigger re-fetch, but we fetch here too just in case
+                loadDashboard();
+            } catch (err) {
+                alert(err.message);
             }
         }
 

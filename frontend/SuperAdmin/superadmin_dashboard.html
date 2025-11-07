@@ -3,29 +3,145 @@
 <head>
     <meta charset="UTF-8"><title>Super Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link-active { background-color: #7c3aed; color: white; } </style>
+    <style> 
+        body { font-family: 'Poppins', sans-serif; } 
+        .sidebar-link-active { background-color: #7c3aed; color: white; } 
+        .loading-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body class="bg-gray-100 flex h-screen">
+
     <!-- Sidebar -->
     <aside class="w-64 bg-gray-900 text-gray-300 flex flex-col">
         <div class="p-5 text-white text-2xl font-bold border-b border-gray-800">Super Admin</div>
         <nav class="flex-1 p-3 space-y-2">
             <a href="superadmin_dashboard.html" class="flex items-center p-3 rounded-lg sidebar-link-active"><i class="fas fa-globe w-8"></i>Global Dashboard</a>
-            <a href="superadmin_approvals.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-user-check w-8"></i>Admin Approvals<span class="ml-auto bg-red-500 text-xs rounded-full h-5 w-5 flex items-center justify-center">2</span></a>
+            <a href="superadmin_approvals.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white">
+                <i class="fas fa-user-check w-8"></i>Admin Approvals
+                <!-- Badge for pending count -->
+                <span id="pending-count-badge" class="ml-auto bg-red-500 text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+            </a>
             <a href="superadmin_manage_branches.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-store w-8"></i>Manage Branches</a>
         </nav>
-        <div class="p-5 border-t border-gray-800"><a href="index.html" class="flex items-center text-red-400 hover:text-red-300"><i class="fas fa-sign-out-alt w-8"></i>Logout</a></div>
+        <div class="p-5 border-t border-gray-800">
+            <button onclick="handleLogout()" class="flex items-center text-red-400 hover:text-red-300 w-full"><i class="fas fa-sign-out-alt w-8"></i>Logout</button>
+        </div>
     </aside>
 
     <!-- Main Content -->
-    <div class="flex-1 p-6">
+    <main class="flex-1 p-6 overflow-y-auto">
         <h1 class="text-3xl font-bold text-gray-800 mb-6">Global Overview</h1>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="bg-white p-5 rounded-lg shadow flex items-center justify-between"><div><div class="text-sm text-gray-500">Total Branches</div><div class="text-3xl font-bold">28</div></div><div class="bg-purple-100 text-purple-600 rounded-full h-12 w-12 flex items-center justify-center"><i class="fas fa-store fa-lg"></i></div></div>
-            <div class="bg-white p-5 rounded-lg shadow flex items-center justify-between"><div><div class="text-sm text-gray-500">Total Users</div><div class="text-3xl font-bold">15,721</div></div><div class="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center"><i class="fas fa-users fa-lg"></i></div></div>
-            <a href="superadmin_approvals.html" class="bg-white p-5 rounded-lg shadow flex items-center justify-between hover:shadow-xl transition"><div><div class="text-sm text-gray-500">Pending Approvals</div><div class="text-3xl font-bold text-red-500">2</div></div><div class="bg-red-100 text-red-600 rounded-full h-12 w-12 flex items-center justify-center"><i class="fas fa-user-clock fa-lg"></i></div></a>
-            <div class="bg-white p-5 rounded-lg shadow flex items-center justify-between"><div><div class="text-sm text-gray-500">System Uptime</div><div class="text-3xl font-bold">99.98%</div></div><div class="bg-green-100 text-green-600 rounded-full h-12 w-12 flex items-center justify-center"><i class="fas fa-server fa-lg"></i></div></div>
+            <!-- Total Branches Card -->
+            <div class="bg-white p-5 rounded-lg shadow flex items-center justify-between">
+                <div>
+                    <div class="text-sm text-gray-500">Total Branches</div>
+                    <div id="total-branches" class="text-3xl font-bold"><i class="fas fa-spinner loading-spinner"></i></div>
+                </div>
+                <div class="bg-purple-100 text-purple-600 rounded-full h-12 w-12 flex items-center justify-center"><i class="fas fa-store fa-lg"></i></div>
+            </div>
+            <!-- Total Users Card -->
+            <div class="bg-white p-5 rounded-lg shadow flex items-center justify-between">
+                <div>
+                    <div class="text-sm text-gray-500">Total Users</div>
+                    <div id="total-users" class="text-3xl font-bold"><i class="fas fa-spinner loading-spinner"></i></div>
+                </div>
+                <div class="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center"><i class="fas fa-users fa-lg"></i></div>
+            </div>
+            <!-- Pending Approvals Card -->
+            <a href="superadmin_approvals.html" class="bg-white p-5 rounded-lg shadow flex items-center justify-between hover:shadow-xl transition">
+                <div>
+                    <div class="text-sm text-gray-500">Pending Approvals</div>
+                    <div id="pending-approvals" class="text-3xl font-bold text-red-500"><i class="fas fa-spinner loading-spinner"></i></div>
+                </div>
+                <div class="bg-red-100 text-red-600 rounded-full h-12 w-12 flex items-center justify-center"><i class="fas fa-user-clock fa-lg"></i></div>
+            </a>
+            <!-- System Uptime Card (Static) -->
+            <div class="bg-white p-5 rounded-lg shadow flex items-center justify-between">
+                <div>
+                    <div class="text-sm text-gray-500">System Uptime</div>
+                    <div class="text-3xl font-bold">99.98%</div>
+                </div>
+                <div class="bg-green-100 text-green-600 rounded-full h-12 w-12 flex items-center justify-center"><i class="fas fa-server fa-lg"></i></div>
+            </div>
         </div>
-    </div>
+    </main>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        // --- 1. INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // Check if user is logged in as Super Admin
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!token || !user || user.role !== 'superadmin') {
+                alert('Access Denied! Redirecting to login.');
+                window.location.href = 'superadmin_access.html';
+                return;
+            }
+            // Fetch all dashboard data
+            loadDashboardData();
+        });
+
+        // --- 2. DATA FETCHING ---
+        async function loadDashboardData() {
+            const token = localStorage.getItem('token');
+            try {
+                // Fetch all data points in parallel for better performance
+                const [branchesRes, usersRes, pendingAdminsRes] = await Promise.all([
+                    fetch(`${API_URL}/branches`, { headers: { 'x-auth-token': token } }),
+                    fetch(`${API_URL}/users`, { headers: { 'x-auth-token': token } }),
+                    fetch(`${API_URL}/auth/admins/pending`, { headers: { 'x-auth-token': token } })
+                ]);
+
+                if (!branchesRes.ok || !usersRes.ok || !pendingAdminsRes.ok) {
+                    throw new Error('One or more data requests failed.');
+                }
+
+                const branches = await branchesRes.json();
+                const users = await usersRes.json();
+                const pendingAdmins = await pendingAdminsRes.json();
+
+                // Pass the data to the display function
+                displayStats({
+                    branchCount: branches.length,
+                    userCount: users.length,
+                    pendingCount: pendingAdmins.length
+                });
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                // Show error state in the UI
+                document.getElementById('total-branches').innerHTML = '<span class="text-red-500 text-lg">Error</span>';
+                document.getElementById('total-users').innerHTML = '<span class="text-red-500 text-lg">Error</span>';
+                document.getElementById('pending-approvals').innerHTML = '<span class="text-red-500 text-lg">Error</span>';
+            }
+        }
+
+        // --- 3. DOM MANIPULATION ---
+        function displayStats(data) {
+            document.getElementById('total-branches').textContent = data.branchCount;
+            document.getElementById('total-users').textContent = data.userCount;
+            document.getElementById('pending-approvals').textContent = data.pendingCount;
+
+            // Update the sidebar badge as well
+            const badge = document.getElementById('pending-count-badge');
+            if (data.pendingCount > 0) {
+                badge.textContent = data.pendingCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // --- 4. UTILITY ---
+        function handleLogout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'superadmin_access.html';
+        }
+    </script>
 </body>
 </html>
