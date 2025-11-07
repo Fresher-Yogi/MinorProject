@@ -47,6 +47,17 @@ const userRoutes = require('./src/routes/userRoutes');
 const branchRoutes = require('./src/routes/branchRoutes');
 const appointmentRoutes = require('./src/routes/appointmentRoutes');
 
+// Add the new model to your imports
+const ServiceCategory = require('./src/models/ServiceCategory'); // ADD THIS LINE
+
+// ... (keep associations for User, Branch, Appointment)
+
+// Add the new route to your routes section
+const categoryRoutes = require('./src/routes/categoryRoutes'); // ADD THIS LINE
+
+// ... (keep existing app.use for auth, users, etc.)
+
+app.use('/api/categories', categoryRoutes); // ADD THIS LINE
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/branches', branchRoutes);

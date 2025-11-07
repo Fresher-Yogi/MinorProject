@@ -7,6 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- ✅ NEW: Toastify CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #f0f4f8; }
         .form-container { transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
@@ -37,27 +41,16 @@
             </div>
             
             <div class="relative">
-                <!-- Login Form -->
                 <div id="login-form" class="form-container">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Admin Login</h2>
                     <form onsubmit="handleAdminLogin(event)">
-                        <div class="mb-5 input-group">
-                            <i class="fas fa-envelope input-icon"></i>
-                            <!-- ✅ FIX: ADDED ID HERE -->
-                            <input type="email" id="login-email" placeholder="Admin Email" class="form-input" required>
-                        </div>
-                        <div class="mb-5 input-group">
-                            <i class="fas fa-lock input-icon"></i>
-                            <!-- ✅ FIX: ADDED ID HERE -->
-                            <input type="password" id="login-password" placeholder="Password" class="form-input" required>
-                        </div>
+                        <div class="mb-5 input-group"><i class="fas fa-envelope input-icon"></i><input type="email" id="login-email" placeholder="Admin Email" class="form-input" required></div>
+                        <div class="mb-5 input-group"><i class="fas fa-lock input-icon"></i><input type="password" id="login-password" placeholder="Password" class="form-input" required></div>
                         <div class="text-right mb-6"><a href="forgot-password.html" class="text-sm text-green-600 hover:underline">Forgot Password?</a></div>
-                        <!-- ✅ FIX: ADDED ID TO BUTTON -->
                         <button id="login-btn" type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition duration-300">Login to Dashboard</button>
                     </form>
                 </div>
                 
-                <!-- Registration Form -->
                 <div id="register-form" class="form-container form-hidden">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Register Your Branch</h2>
                     <form onsubmit="handleAdminRegister(event)">
@@ -72,10 +65,14 @@
         </div>
     </div>
 
+    <!-- ✅ NEW: Toastify JavaScript -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
     <script>
         const API_URL = 'http://localhost:5000/api';
 
         function showForm(formName) {
+            // ... (no changes)
             const loginForm = document.getElementById('login-form');
             const registerForm = document.getElementById('register-form');
             const loginTab = document.getElementById('login-tab');
@@ -92,6 +89,17 @@
                 registerTab.classList.add('tab-active');
             }
         }
+        
+        // ✅ NEW: Toast helper
+        function showToast(message, isError = false) {
+            Toastify({
+                text: message,
+                duration: 3000,
+                close: true,
+                gravity: "top", position: "right",
+                style: { background: isError ? "#ef4444" : "#22c55e" },
+            }).showToast();
+        }
 
         async function handleAdminLogin(event) {
             event.preventDefault();
@@ -99,7 +107,6 @@
             loginBtn.disabled = true;
             loginBtn.textContent = 'Logging in...';
 
-            // ✅ FIX: Correctly gets values from the form with IDs
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
@@ -112,22 +119,24 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    alert('✅ Login successful!');
+                    showToast('✅ Login successful!');
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
 
-                    if (data.user.role === 'superadmin') {
-                        window.location.href = '../SuperAdmin/superadmin_dashboard.html';
-                    } else {
-                        window.location.href = 'admindashboard.html';
-                    }
+                    setTimeout(() => {
+                        if (data.user.role === 'superadmin') {
+                            window.location.href = '../SuperAdmin/superadmin_dashboard.html';
+                        } else {
+                            window.location.href = 'admindashboard.html';
+                        }
+                    }, 1000);
                 } else {
                     throw new Error(data.message || 'Login failed.');
                 }
             } catch (error) {
-                alert(`❌ ${error.message}`);
+                // ✅ UPDATED: from alert() to showToast()
+                showToast(`❌ ${error.message}`, true);
             } finally {
-                // Ensure the button is always re-enabled
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Login to Dashboard';
             }
@@ -151,10 +160,13 @@
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.message);
-                alert(`✅ ${data.message}`);
+                
+                // ✅ UPDATED: from alert() to showToast()
+                showToast(`✅ ${data.message}`);
                 showForm('login');
             } catch (error) {
-                alert(`❌ ${error.message}`);
+                // ✅ UPDATED: from alert() to showToast()
+                showToast(`❌ ${error.message}`, true);
             } finally {
                 regBtn.disabled = false;
                 regBtn.textContent = 'Register for Approval';
@@ -163,6 +175,3 @@
     </script>
 </body>
 </html>
-
-
-

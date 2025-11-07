@@ -7,6 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- ✅ NEW: Toastify CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #f0f4f8; }
         .form-container { transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
@@ -22,7 +26,6 @@
 
     <div class="relative w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
         
-        <!-- Info Panel -->
         <div class="w-full md:w-1/2 p-8 sm:p-12 text-white flex flex-col justify-center items-center text-center bg-gradient-to-br from-blue-600 to-blue-800">
             <h1 class="text-4xl font-bold mb-4">Welcome to QMS</h1>
             <p class="text-lg mb-6">Your solution to smarter queues and seamless appointments. Log in or create an account to get started.</p>
@@ -31,84 +34,49 @@
             </a>
         </div>
         
-        <!-- Form Panel -->
         <div class="w-full md:w-1/2 p-8 sm:p-12">
-            <!-- Tab Navigation -->
             <div class="flex border-b mb-8">
                 <button id="login-tab" class="flex-1 py-3 text-lg font-semibold text-center border-b-4 tab-active" onclick="showForm('login')">Login</button>
                 <button id="register-tab" class="flex-1 py-3 text-lg font-semibold text-center border-b-4 border-transparent text-gray-500" onclick="showForm('register')">Register</button>
             </div>
             
             <div class="relative">
-                <!-- ✅ LOGIN FORM (CONNECTED TO BACKEND) -->
                 <div id="login-form" class="form-container">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">User Login</h2>
                     <form id="login-form-element" onsubmit="handleLogin(event)">
-                        <div class="mb-5 input-group">
-                            <i class="fas fa-envelope input-icon"></i>
-                            <input type="email" id="login-email" placeholder="Email Address" class="form-input" required>
-                        </div>
-                        <div class="mb-5 input-group">
-                            <i class="fas fa-lock input-icon"></i>
-                            <input type="password" id="login-password" placeholder="Password" class="form-input" required>
-                        </div>
-                        <div class="flex items-center justify-between mb-6">
-                            <label class="flex items-center text-sm text-gray-600">
-                                <input type="checkbox" class="h-4 w-4 text-blue-600 rounded">
-                                <span class="ml-2">Remember me</span>
-                            </label>
-                            <a href="#" class="text-sm text-blue-600 hover:underline">Forgot Password?</a>
-                        </div>
-                        <button type="submit" id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
-                            Login
-                        </button>
+                        <div class="mb-5 input-group"><i class="fas fa-envelope input-icon"></i><input type="email" id="login-email" placeholder="Email Address" class="form-input" required></div>
+                        <div class="mb-5 input-group"><i class="fas fa-lock input-icon"></i><input type="password" id="login-password" placeholder="Password" class="form-input" required></div>
+                        <div class="flex items-center justify-between mb-6"><label class="flex items-center text-sm text-gray-600"><input type="checkbox" class="h-4 w-4 text-blue-600 rounded"><span class="ml-2">Remember me</span></label><a href="#" class="text-sm text-blue-600 hover:underline">Forgot Password?</a></div>
+                        <button type="submit" id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">Login</button>
                     </form>
                 </div>
                 
-                <!-- ✅ REGISTRATION FORM (CONNECTED TO BACKEND) -->
                 <div id="register-form" class="form-container form-hidden">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Create Account</h2>
                     <form id="register-form-element" onsubmit="handleRegister(event)">
-                        <div class="mb-5 input-group">
-                            <i class="fas fa-user input-icon"></i>
-                            <input type="text" id="reg-name" placeholder="Full Name" class="form-input" required>
-                        </div>
-                        <div class="mb-5 input-group">
-                            <i class="fas fa-envelope input-icon"></i>
-                            <input type="email" id="reg-email" placeholder="Email Address" class="form-input" required>
-                        </div>
-                        <div class="mb-5 input-group">
-                            <i class="fas fa-lock input-icon"></i>
-                            <input type="password" id="reg-password" placeholder="Create Password" class="form-input" required>
-                        </div>
-                        <div class="mb-5 input-group">
-                            <i class="fas fa-lock input-icon"></i>
-                            <input type="password" id="reg-confirm-password" placeholder="Confirm Password" class="form-input" required>
-                        </div>
-                        <button type="submit" id="register-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
-                            Register
-                        </button>
+                        <div class="mb-5 input-group"><i class="fas fa-user input-icon"></i><input type="text" id="reg-name" placeholder="Full Name" class="form-input" required></div>
+                        <div class="mb-5 input-group"><i class="fas fa-envelope input-icon"></i><input type="email" id="reg-email" placeholder="Email Address" class="form-input" required></div>
+                        <div class="mb-5 input-group"><i class="fas fa-lock input-icon"></i><input type="password" id="reg-password" placeholder="Create Password" class="form-input" required></div>
+                        <div class="mb-5 input-group"><i class="fas fa-lock input-icon"></i><input type="password" id="reg-confirm-password" placeholder="Confirm Password" class="form-input" required></div>
+                        <button type="submit" id="register-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">Register</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // ============================================
-        // 🔧 CONFIGURATION
-        // ============================================
-        const API_URL = 'http://localhost:5000/api';
+    <!-- ✅ NEW: Toastify JavaScript -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
-        // ============================================
-        // 🎨 TAB SWITCHING (Login/Register)
-        // ============================================
+    <script>
+        const API_URL = 'http://localhost:5000/api';
         const loginForm = document.getElementById('login-form');
         const registerForm = document.getElementById('register-form');
         const loginTab = document.getElementById('login-tab');
         const registerTab = document.getElementById('register-tab');
 
         function showForm(formName) {
+            // ... (no changes in this function)
             if (formName === 'login') {
                 loginForm.classList.remove('form-hidden');
                 registerForm.classList.add('form-hidden');
@@ -125,143 +93,116 @@
                 registerTab.classList.remove('text-gray-500');
             }
         }
+        
+        // ✅ NEW: Helper function to show notifications
+        function showToast(message, isError = false) {
+            Toastify({
+                text: message,
+                duration: 3000,
+                close: true,
+                gravity: "top", // `top` or `bottom`
+                position: "right", // `left`, `center` or `right`
+                style: {
+                    background: isError ? "linear-gradient(to right, #ff5f6d, #ffc371)" : "linear-gradient(to right, #00b09b, #96c93d)",
+                },
+            }).showToast();
+        }
 
-        // ============================================
-        // ✅ REGISTRATION - CONNECT TO BACKEND
-        // ============================================
         async function handleRegister(event) {
-            event.preventDefault(); // Stop page reload
-            
+            event.preventDefault();
             const btn = document.getElementById('register-btn');
-            const originalText = btn.textContent;
             btn.disabled = true;
             btn.textContent = 'Creating Account...';
             
-            // Get form values
             const name = document.getElementById('reg-name').value.trim();
             const email = document.getElementById('reg-email').value.trim();
             const password = document.getElementById('reg-password').value;
             const confirmPassword = document.getElementById('reg-confirm-password').value;
             
-            // Validate passwords match
             if (password !== confirmPassword) {
-                alert('❌ Passwords do not match!');
+                // ✅ UPDATED: from alert() to showToast()
+                showToast('❌ Passwords do not match!', true);
                 btn.disabled = false;
-                btn.textContent = originalText;
+                btn.textContent = 'Register';
                 return;
             }
-            
-            // Validate password length
             if (password.length < 6) {
-                alert('❌ Password must be at least 6 characters!');
+                // ✅ UPDATED: from alert() to showToast()
+                showToast('❌ Password must be at least 6 characters!', true);
                 btn.disabled = false;
-                btn.textContent = originalText;
+                btn.textContent = 'Register';
                 return;
             }
             
             try {
-                // 📤 SEND DATA TO BACKEND
                 const response = await fetch(`${API_URL}/auth/register`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        name: name,
-                        email: email,
-                        password: password
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
                 });
-                
                 const data = await response.json();
                 
                 if (response.ok) {
-                    // ✅ SUCCESS!
-                    alert('✅ Account created successfully! Welcome to QMS!');
-                    
-                    // Save login info
+                    showToast('✅ Account created successfully! Welcome!');
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
-                    
-                    // Redirect to dashboard
-                    window.location.href = 'User-Dashboard.html';
+                    // Redirect after a short delay to allow user to see the toast
+                    setTimeout(() => { window.location.href = 'User-Dashboard.html'; }, 1500);
                 } else {
-                    // ❌ ERROR FROM BACKEND
-                    alert('❌ ' + (data.message || 'Registration failed. Please try again.'));
+                    // ✅ UPDATED: from alert() to showToast()
+                    showToast(`❌ ${data.message || 'Registration failed.'}`, true);
                     btn.disabled = false;
-                    btn.textContent = originalText;
+                    btn.textContent = 'Register';
                 }
-                
             } catch (error) {
-                // ❌ NETWORK ERROR
-                console.error('Error:', error);
-                alert('❌ Could not connect to server. Make sure backend is running on port 5000!');
+                // ✅ UPDATED: from alert() to showToast()
+                showToast('❌ Network error. Could not connect to server.', true);
                 btn.disabled = false;
-                btn.textContent = originalText;
+                btn.textContent = 'Register';
             }
         }
 
-        // ============================================
-        // ✅ LOGIN - CONNECT TO BACKEND
-        // ============================================
         async function handleLogin(event) {
-            event.preventDefault(); // Stop page reload
-            
+            event.preventDefault();
             const btn = document.getElementById('login-btn');
-            const originalText = btn.textContent;
             btn.disabled = true;
             btn.textContent = 'Logging in...';
             
-            // Get form values
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
             
-            // Validate inputs
             if (!email || !password) {
-                alert('❌ Please enter both email and password!');
+                // ✅ UPDATED: from alert() to showToast()
+                showToast('❌ Please enter both email and password!', true);
                 btn.disabled = false;
-                btn.textContent = originalText;
+                btn.textContent = 'Login';
                 return;
             }
             
             try {
-                // 📤 SEND DATA TO BACKEND
                 const response = await fetch(`${API_URL}/auth/login`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: email,
-                        password: password
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
                 });
-                
                 const data = await response.json();
                 
                 if (response.ok) {
-                    // ✅ SUCCESS!
-                    alert('✅ Login successful! Welcome back!');
-                    
-                    // Save login info
+                    showToast('✅ Login successful! Welcome back!');
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
-                    
-                    // Redirect to dashboard
-                    window.location.href = 'User-Dashboard.html';
+                    setTimeout(() => { window.location.href = 'User-Dashboard.html'; }, 1500);
                 } else {
-                    // ❌ ERROR FROM BACKEND
-                    alert('❌ ' + (data.message || 'Login failed. Check your credentials.'));
+                    // ✅ UPDATED: from alert() to showToast()
+                    showToast(`❌ ${data.message || 'Login failed.'}`, true);
                     btn.disabled = false;
-                    btn.textContent = originalText;
+                    btn.textContent = 'Login';
                 }
-                
             } catch (error) {
-                // ❌ NETWORK ERROR
-                console.error('Error:', error);
-                alert('❌ Could not connect to server. Make sure backend is running on port 5000!');
+                // ✅ UPDATED: from alert() to showToast()
+                showToast('❌ Network error. Could not connect to server.', true);
                 btn.disabled = false;
-                btn.textContent = originalText;
+                btn.textContent = 'Login';
             }
         }
     </script>

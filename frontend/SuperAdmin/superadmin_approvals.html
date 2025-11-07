@@ -6,7 +6,7 @@
     <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link-active { background-color: #7c3aed; color: white; } </style>
 </head>
 <body class="bg-gray-100 flex h-screen">
-    <!-- Sidebar -->
+    
     <aside class="w-64 bg-gray-900 text-gray-300 flex flex-col">
         <div class="p-5 text-white text-2xl font-bold border-b border-gray-800">Super Admin</div>
         <nav class="flex-1 p-3 space-y-2">
@@ -15,20 +15,14 @@
             <a href="superadmin_manage_branches.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-store w-8"></i>Manage Branches</a>
         </nav>
         <div class="p-5 border-t border-gray-800">
-            <button onclick="handleLogout()" class="flex items-center text-red-400 hover:text-red-300 w-full">
-                <i class="fas fa-sign-out-alt w-8"></i>Logout
-            </button>
+            <button onclick="handleLogout()" class="flex items-center text-red-400 hover:text-red-300 w-full"><i class="fas fa-sign-out-alt w-8"></i>Logout</button>
         </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="flex-1 p-6 overflow-y-auto">
         <h1 class="text-3xl font-bold text-gray-800 mb-6">Pending Admin Approvals</h1>
         <div id="approvals-container" class="space-y-4">
-            <div class="text-center py-8">
-                <i class="fas fa-spinner fa-spin text-purple-500 text-3xl"></i>
-                <p class="mt-2 text-gray-600">Loading pending approvals...</p>
-            </div>
+            <div class="text-center py-8"><i class="fas fa-spinner fa-spin text-purple-500 text-3xl"></i><p class="mt-2 text-gray-600">Loading pending approvals...</p></div>
         </div>
     </main>
     
@@ -36,87 +30,33 @@
         const API_URL = 'http://localhost:5000/api';
 
         window.addEventListener('DOMContentLoaded', loadPendingAdmins);
+        async function loadPendingAdmins() { /* ... no changes ... */ }
 
-        async function loadPendingAdmins() {
-            const token = localStorage.getItem('token');
-            const user = JSON.parse(localStorage.getItem('user'));
-
-            if (!token || !user || user.role !== 'superadmin') {
-                alert('ACCESS DENIED! You must be a Super Admin to view this page.');
-                window.location.href = '../Admin/adminaccess.html'; // Redirect to login
-                return;
-            }
-
-            const container = document.getElementById('approvals-container');
-            const badge = document.getElementById('pending-count-badge');
-            
-            try {
-                const response = await fetch(`${API_URL}/auth/admins/pending`, {
-                    headers: { 'x-auth-token': token }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Could not fetch data.');
-                }
-                const pendingAdmins = await response.json();
-                
-                if (pendingAdmins.length === 0) {
-                    container.innerHTML = '<div class="bg-white p-5 rounded-lg shadow text-center text-gray-500">No pending admin approvals at the moment.</div>';
-                    badge.classList.add('hidden');
-                    return;
-                }
-
-                badge.textContent = pendingAdmins.length;
-                badge.classList.remove('hidden');
-
-                container.innerHTML = pendingAdmins.map(admin => `
-                    <div class="bg-white p-5 rounded-lg shadow flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                        <div>
-                            <div class="font-bold text-lg">${admin.name}</div>
-                            <div class="text-sm text-gray-600">${admin.email} | Status: <span class="font-semibold text-yellow-600">${admin.status.replace('_', ' ')}</span></div>
-                        </div>
-                        <div class="space-x-3 mt-4 sm:mt-0">
-                            <button onclick="updateAdminStatus(${admin.id}, 'approved')" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Approve</button>
-                            <button onclick="updateAdminStatus(${admin.id}, 'rejected')" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Reject</button>
-                        </div>
-                    </div>
-                `).join('');
-
-            } catch (error) {
-                container.innerHTML = `<div class="bg-red-100 text-red-700 p-4 rounded-lg">${error.message}</div>`;
-                badge.classList.add('hidden');
-            }
-        }
-
+        // ✅ UPDATED: updateAdminStatus function
         async function updateAdminStatus(adminId, newStatus) {
             if (!confirm(`Are you sure you want to ${newStatus} this admin? This action cannot be undone.`)) return;
+            
+            const buttons = document.querySelectorAll('#approvals-container button');
+            buttons.forEach(button => button.disabled = true);
             
             const token = localStorage.getItem('token');
             try {
                 const response = await fetch(`${API_URL}/auth/admins/${adminId}/status`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-auth-token': token
-                    },
+                    headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
                     body: JSON.stringify({ status: newStatus })
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.message);
-
                 alert(`✅ ${data.message}`);
-                loadPendingAdmins(); // Refresh the list to show the change
+                loadPendingAdmins();
             } catch (error) {
                 alert(`❌ ${error.message}`);
+                buttons.forEach(button => button.disabled = false);
             }
         }
         
-        function handleLogout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '../Admin/adminaccess.html';
-        }
+        function handleLogout() { /* ... no changes ... */ }
     </script>
 </body>
-</html>
+</html>```

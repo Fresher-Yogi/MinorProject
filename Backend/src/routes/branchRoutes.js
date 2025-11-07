@@ -2,10 +2,11 @@
 
 const express = require('express');
 const router = express.Router();
-const { getAllBranches, createBranch, getBranchById } = require('../controllers/branchController');
+// ✅ Import the new controller function
+const { getAllBranches, createBranch, getBranchById, getAvailableSlots } = require('../controllers/branchController');
 const authMiddleware = require('../middleware/authMiddleware');
 const Branch = require('../models/Branch');
-const User = require('../models/user'); // ✅ Import User model for role checks
+const User = require('../models/user');
 
 // @route   GET /api/branches
 // @desc    Get all branches (Public)
@@ -15,7 +16,13 @@ router.get('/', getAllBranches);
 // @desc    Get a single branch by its ID (Public)
 router.get('/:id', getBranchById);
 
-// --- 🛑 MODIFIED ROUTE: Now requires Super Admin access ---
+// --- ✅ NEW ROUTE ADDED for dynamic time slots ---
+// @route   GET /api/branches/:id/available-slots
+// @desc    Get available appointment slots for a branch on a specific date
+router.get('/:id/available-slots', getAvailableSlots);
+// --- ✅ END OF NEW ROUTE ---
+
+
 // @route   POST /api/branches
 // @desc    Create a new branch (Super Admin Only)
 router.post('/', authMiddleware, async (req, res) => {
@@ -24,15 +31,12 @@ router.post('/', authMiddleware, async (req, res) => {
         if (!user || user.role !== 'superadmin') {
             return res.status(403).json({ message: 'Access Denied. Only Super Admins can create branches.' });
         }
-        // If the user is a superadmin, proceed with the original controller logic
         createBranch(req, res);
     } catch (error) {
         res.status(500).json({ message: 'Server error during authorization.' });
     }
 });
 
-
-// --- ✅ NEW ROUTE ADDED for Branch Management by Admin ---
 // @route   GET /api/branches/my-branch
 // @desc    Get the branch managed by the logged-in admin
 router.get('/my-branch', authMiddleware, async (req, res) => {
@@ -51,7 +55,6 @@ router.get('/my-branch', authMiddleware, async (req, res) => {
     }
 });
 
-// --- ✅ NEW ROUTE ADDED for Branch Management by Admin ---
 // @route   PUT /api/branches/my-branch
 // @desc    Update the branch settings for the logged-in admin
 router.put('/my-branch', authMiddleware, async (req, res) => {
@@ -78,7 +81,6 @@ router.put('/my-branch', authMiddleware, async (req, res) => {
 });
 
 
-// --- ✅ NEW ROUTE ADDED for Super Admin ---
 // @route   PUT /api/branches/:id
 // @desc    Update a branch's details and assign an admin (Super Admin Only)
 router.put('/:id', authMiddleware, async (req, res) => {
@@ -97,7 +99,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
         branch.name = name || branch.name;
         branch.location = location || branch.location;
-        branch.adminId = adminId ? parseInt(adminId) : null; // Allow un-assigning admin
+        branch.adminId = adminId ? parseInt(adminId) : null;
 
         await branch.save();
         res.json({ message: 'Branch updated successfully!', branch });
@@ -109,7 +111,6 @@ router.put('/:id', authMiddleware, async (req, res) => {
 });
 
 
-// --- ✅ NEW ROUTE ADDED for Super Admin ---
 // @route   DELETE /api/branches/:id
 // @desc    Delete a branch (Super Admin Only)
 router.delete('/:id', authMiddleware, async (req, res) => {
@@ -130,6 +131,5 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 });
-
 
 module.exports = router;

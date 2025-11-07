@@ -1,16 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><title>Global Analytics</title>
-    <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Analytics - QMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link-active { background-color: #7c3aed; color: white; } </style>
+    <style> 
+        body { font-family: 'Poppins', sans-serif; } 
+        .sidebar-link-active { background-color: #7c3aed; color: white; } 
+    </style>
 </head>
 <body class="bg-gray-100 flex h-screen">
 
-    <!-- Sidebar -->
     <aside class="w-64 bg-gray-900 text-gray-300 flex flex-col">
-        <div class="p-5 text-white text-2xl font-bold border-b border-gray-800">Super Admin</div>
+        <div class="p-5 text-white text-2xl font-bold border-b border-gray-800"><i class="fas fa-crown mr-2"></i>Super Admin</div>
         <nav class="flex-1 p-3 space-y-2">
             <a href="superadmin_dashboard.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-globe w-8"></i>Global Dashboard</a>
             <a href="superadmin_approvals.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-user-check w-8"></i>Admin Approvals</a>
@@ -18,45 +24,186 @@
             <a href="superadmin_manage_categories.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-sitemap w-8"></i>Service Categories</a>
             <a href="superadmin_global_analytics.html" class="flex items-center p-3 rounded-lg sidebar-link-active"><i class="fas fa-chart-pie w-8"></i>Global Analytics</a>
         </nav>
-        <div class="p-5 border-t border-gray-800"><a href="index.html" class="flex items-center text-red-400 hover:text-red-300"><i class="fas fa-sign-out-alt w-8"></i>Logout</a></div>
+        <div class="p-5 border-t border-gray-800">
+            <button onclick="handleLogout()" class="flex items-center text-red-400 hover:text-red-300 w-full"><i class="fas fa-sign-out-alt w-8"></i>Logout</button>
+        </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="flex-1 p-6 overflow-y-auto">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6">Global System Analytics</h1>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- User Growth -->
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="font-semibold text-xl mb-4">User Registrations (Last 6 Months)</h2>
-                <canvas id="userGrowthChart"></canvas>
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Global System Analytics</h1>
+                <p class="text-gray-600 mt-1">Real-time insights and performance metrics</p>
             </div>
-             <!-- Busiest Branches -->
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="font-semibold text-xl mb-4">Busiest Branches (By Appointments)</h2>
-                <canvas id="busiestBranchChart"></canvas>
-            </div>
+            <button onclick="loadAnalyticsData()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold transition"><i class="fas fa-sync-alt mr-2"></i>Refresh Data</button>
         </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-lg shadow"><div class="flex justify-between items-start mb-2"><div class="text-sm text-gray-500 font-semibold">Total Appointments</div><i class="fas fa-calendar-check text-purple-500 text-xl"></i></div><div id="total-appts-analytics" class="text-3xl font-bold text-gray-800">...</div><div class="text-xs text-gray-500 mt-1">All time</div></div>
+            <div class="bg-white p-5 rounded-lg shadow"><div class="flex justify-between items-start mb-2"><div class="text-sm text-gray-500 font-semibold">This Month</div><i class="fas fa-chart-line text-blue-500 text-xl"></i></div><div id="month-appts" class="text-3xl font-bold text-gray-800">...</div><div class="text-xs text-gray-500 mt-1">Since start of month</div></div>
+            <div class="bg-white p-5 rounded-lg shadow"><div class="flex justify-between items-start mb-2"><div class="text-sm text-gray-500 font-semibold">Today's Appointments</div><i class="fas fa-calendar-day text-green-500 text-xl"></i></div><div id="today-appts" class="text-3xl font-bold text-gray-800">...</div><div class="text-xs text-gray-500 mt-1">For today's date</div></div>
+            <div class="bg-white p-5 rounded-lg shadow"><div class="flex justify-between items-start mb-2"><div class="text-sm text-gray-500 font-semibold">Completion Rate</div><i class="fas fa-percentage text-yellow-500 text-xl"></i></div><div id="completion-rate" class="text-3xl font-bold text-gray-800">...</div><div class="text-xs text-gray-500 mt-1">Overall success rate</div></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white p-6 rounded-xl shadow-lg"><h2 class="font-bold text-xl mb-4 flex items-center"><i class="fas fa-chart-pie text-purple-600 mr-2"></i>Appointments by Status</h2><canvas id="statusChart"></canvas></div>
+            <div class="bg-white p-6 rounded-xl shadow-lg"><h2 class="font-bold text-xl mb-4 flex items-center"><i class="fas fa-chart-bar text-blue-600 mr-2"></i>Top 5 Busiest Branches</h2><canvas id="branchChart"></canvas></div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-xl shadow-lg"><h2 class="font-bold text-xl mb-4 flex items-center"><i class="fas fa-chart-line text-green-600 mr-2"></i>Appointment Trends (Last 30 Days)</h2><canvas id="trendChart"></canvas></div>
     </main>
+
     <script>
-        // User Growth Chart
-        new Chart(document.getElementById('userGrowthChart').getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: ['April', 'May', 'June', 'July', 'August', 'September'],
-                datasets: [{ label: 'New Users', data: [1200, 1800, 2500, 2200, 3100, 4200], backgroundColor: 'rgba(124, 58, 237, 0.2)', borderColor: '#7c3aed', borderWidth: 2, tension: 0.3 }]
-            },
-            options: { responsive: true }
+        const API_URL = 'http://localhost:5000/api';
+        let charts = {};
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            if (!token || user.role !== 'superadmin') {
+                alert('Access Denied!');
+                window.location.href = 'superadmin_access.html';
+                return;
+            }
+
+            loadAnalyticsData();
         });
 
-        // Busiest Branch Chart
-        new Chart(document.getElementById('busiestBranchChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: ['City Hospital', 'Main St. Bank', 'Downtown Clinic', 'Tech University'],
-                datasets: [{ label: 'Appointments This Month', data: [890, 750, 620, 450], backgroundColor: ['#3b82f6', '#16a34a', '#f59e0b', '#ef4444'] }]
-            },
-            options: { responsive: true, indexAxis: 'y' }
-        });
+        async function loadAnalyticsData() {
+            const token = localStorage.getItem('token');
+            
+            // ✅ CORRECTION: The try...catch block is now correctly structured.
+            try {
+                const [appointmentsRes, branchesRes] = await Promise.all([
+                    fetch(`${API_URL}/appointments`, { headers: { 'x-auth-token': token } }),
+                    fetch(`${API_URL}/branches`, { headers: { 'x-auth-token': token } })
+                ]);
+
+                if (!appointmentsRes.ok || !branchesRes.ok) {
+                    throw new Error('Failed to fetch analytics data.');
+                }
+
+                const appointments = await appointmentsRes.json();
+                const branches = await branchesRes.json();
+
+                displaySummaryStats(appointments);
+                createStatusChart(appointments);
+                createBranchChart(appointments, branches);
+                createTrendChart(appointments);
+
+            } catch (error) {
+                // ✅ CORRECTION: console.error and alert are now inside the catch block.
+                console.error('Error loading analytics:', error);
+                alert('Failed to load analytics data. Please try again.');
+            }
+        }
+        
+        function displaySummaryStats(appointments) {
+            const totalAppts = appointments.length;
+            const completedAppts = appointments.filter(a => a.status === 'completed').length;
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const monthAppts = appointments.filter(a => new Date(a.createdAt) >= firstOfMonth).length;
+            const todayAppts = appointments.filter(a => a.appointmentDate === todayStr).length;
+            const completionRate = totalAppts > 0 ? Math.round((completedAppts / totalAppts) * 100) : 0;
+
+            document.getElementById('total-appts-analytics').textContent = totalAppts;
+            document.getElementById('month-appts').textContent = monthAppts;
+            document.getElementById('today-appts').textContent = todayAppts;
+            document.getElementById('completion-rate').textContent = `${completionRate}%`;
+        }
+
+        function createStatusChart(appointments) {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            const pending = appointments.filter(a => a.status === 'pending').length;
+            const completed = appointments.filter(a => a.status === 'completed').length;
+            const cancelled = appointments.filter(a => a.status === 'cancelled').length;
+            if (charts.statusChart) charts.statusChart.destroy();
+            charts.statusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pending', 'Completed', 'Cancelled'],
+                    datasets: [{
+                        data: [pending, completed, cancelled],
+                        backgroundColor: ['#f59e0b', '#10b981', '#ef4444'],
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        function createBranchChart(appointments, branches) {
+            const ctx = document.getElementById('branchChart').getContext('2d');
+            const branchMap = new Map(branches.map(b => [b.id, b.name]));
+            const branchCounts = appointments.reduce((acc, apt) => {
+                const name = branchMap.get(apt.branchId) || `Unknown Branch`;
+                acc[name] = (acc[name] || 0) + 1;
+                return acc;
+            }, {});
+            const sortedBranches = Object.entries(branchCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const labels = sortedBranches.map(entry => entry[0]);
+            const data = sortedBranches.map(entry => entry[1]);
+            if (charts.branchChart) charts.branchChart.destroy();
+            charts.branchChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Appointments',
+                        data: data,
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 5
+                    }]
+                },
+                options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+            });
+        }
+
+        function createTrendChart(appointments) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            const trendData = {};
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateKey = d.toISOString().split('T')[0];
+                trendData[dateKey] = 0;
+            }
+            appointments.forEach(apt => {
+                const dateKey = apt.appointmentDate;
+                if (trendData.hasOwnProperty(dateKey)) {
+                    trendData[dateKey]++;
+                }
+            });
+            const labels = Object.keys(trendData).map(date => new Date(date+'T00:00:00').toLocaleDateString('en-US', {month: 'short', day: 'numeric'}));
+            const data = Object.values(trendData);
+            if (charts.trendChart) charts.trendChart.destroy();
+            charts.trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Appointments Booked',
+                        data: data,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function handleLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.clear();
+                window.location.href = 'superadmin_access.html';
+            }
+        }
     </script>
 </body>
 </html>

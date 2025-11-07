@@ -5,27 +5,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- ✅ Socket.IO Client -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style> 
         body { font-family: 'Poppins', sans-serif; } 
         .sidebar-link-active { background-color: #2563eb; color: white; }
-        .queue-card {
-            border-left: 5px solid #3b82f6; /* Blue-500 */
-        }
-        .currently-serving {
-            animation: pulse-bg 2s infinite;
-        }
+        .queue-card { border-left: 5px solid #3b82f6; }
+        .currently-serving { animation: pulse-bg 2s infinite; }
         @keyframes pulse-bg {
-            0% { background-color: #dbeafe; } /* Blue-100 */
-            50% { background-color: #bfdbfe; } /* Blue-200 */
-            100% { background-color: #dbeafe; } /* Blue-100 */
+            0% { background-color: #dbeafe; } 50% { background-color: #bfdbfe; } 100% { background-color: #dbeafe; }
         }
     </style>
 </head>
 <body class="bg-gray-100 flex h-screen">
 
-    <!-- Sidebar -->
     <aside class="w-64 bg-gray-800 text-gray-300 flex flex-col">
         <div class="p-5 text-white text-2xl font-bold border-b border-gray-700">Admin Panel</div>
         <nav class="flex-1 p-3 space-y-2">
@@ -38,40 +30,27 @@
         </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="flex-1 p-6 overflow-y-auto">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold text-gray-800">Live Queue Status</h1>
-            <div class="text-lg font-semibold text-gray-700">
-                <i class="far fa-calendar-alt mr-2"></i><span id="current-date"></span>
-            </div>
+            <div class="text-lg font-semibold text-gray-700"><i class="far fa-calendar-alt mr-2"></i><span id="current-date"></span></div>
         </div>
-
-        <!-- This is where the dynamic queue cards will be inserted -->
         <div id="queue-container" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            <!-- Loading State -->
-            <div class="col-span-full text-center py-12">
-                <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
-                <p class="mt-4 text-gray-600">Loading today's queue...</p>
-            </div>
+            <div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i><p class="mt-4 text-gray-600">Loading today's queue...</p></div>
         </div>
     </main>
 
     <script>
-        const API_URL = 'http://localhost:5000'; // Base URL for Socket.io and API
+        const API_URL = 'http://localhost:5000';
         const socket = io(API_URL);
 
-        // --- 1. REAL-TIME SETUP ---
         socket.on('connect', () => console.log('✅ Socket connected for live updates!'));
         socket.on('appointmentUpdated', (updatedAppointment) => {
             console.log('⚡ Real-time update received!', updatedAppointment);
-            // Simply re-load all data to ensure UI is perfectly in sync
             loadQueueData(); 
         });
 
-        // --- 2. INITIALIZATION ---
         window.addEventListener('DOMContentLoaded', () => {
-            // Check for admin login
             const token = localStorage.getItem('token');
             const user = JSON.parse(localStorage.getItem('user'));
             if (!token || !user || user.role !== 'admin') {
@@ -79,71 +58,52 @@
                 window.location.href = 'adminaccess.html';
                 return;
             }
-
-            // Display today's date
             document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            
-            // Load the initial queue data
             loadQueueData();
         });
 
-        // --- 3. DATA FETCHING & PROCESSING ---
         async function loadQueueData() {
             const token = localStorage.getItem('token');
             try {
-                const response = await fetch(`${API_URL}/api/appointments`, {
-                    headers: { 'x-auth-token': token }
-                });
+                const response = await fetch(`${API_URL}/api/appointments`, { headers: { 'x-auth-token': token } });
                 if (!response.ok) throw new Error('Failed to fetch appointments');
                 
                 const allAppointments = await response.json();
-
-                // Get today's date in YYYY-MM-DD format for comparison
                 const today = new Date().toISOString().slice(0, 10);
+                const todaysQueue = allAppointments
+                    .filter(apt => apt.appointmentDate === today && apt.status === 'pending')
+                    .sort((a, b) => a.timeSlot.localeCompare(b.timeSlot)); // Sort by time
 
-                // Filter for today's pending appointments only
-                const todaysQueue = allAppointments.filter(apt => 
-                    apt.appointmentDate === today && apt.status === 'pending'
-                ).sort((a, b) => a.timeSlot.localeCompare(b.timeSlot)); // Sort by time
-
-                // Group the queue by service type
                 const groupedByService = todaysQueue.reduce((acc, apt) => {
                     (acc[apt.serviceType] = acc[apt.serviceType] || []).push(apt);
                     return acc;
                 }, {});
 
                 renderQueues(groupedByService);
-
             } catch (error) {
                 document.getElementById('queue-container').innerHTML = `<div class="col-span-full bg-red-100 text-red-700 p-4 rounded-lg">${error.message}</div>`;
             }
         }
 
-        // --- 4. RENDERING THE UI ---
         function renderQueues(groupedData) {
             const container = document.getElementById('queue-container');
-            
             if (Object.keys(groupedData).length === 0) {
                 container.innerHTML = `<div class="col-span-full text-center py-12"><i class="fas fa-check-circle text-4xl text-green-500"></i><p class="mt-4 text-gray-600">The queue is empty for today!</p></div>`;
                 return;
             }
-
             container.innerHTML = Object.entries(groupedData).map(([service, appointments]) => {
-                const currentlyServing = appointments[0]; // The first person in the sorted list
-                const upNext = appointments.slice(1); // Everyone else
-
+                const currentlyServing = appointments[0];
+                const upNext = appointments.slice(1);
+                // ✅ UPDATED: The HTML now includes the queueNumber for each appointment.
                 return `
                     <div class="bg-white p-5 rounded-lg shadow-md queue-card">
-                        <!-- Queue Header -->
                         <div class="border-b pb-3 mb-4">
                             <h2 class="text-2xl font-bold text-gray-800">${service}</h2>
                             <p class="text-gray-500 font-semibold">${appointments.length} person(s) waiting</p>
                         </div>
-
-                        <!-- Currently Serving -->
                         ${currentlyServing ? `
                         <div class="p-4 rounded-lg mb-4 currently-serving">
-                            <p class="text-sm font-bold text-blue-700">NOW SERVING</p>
+                            <p class="text-sm font-bold text-blue-700">NOW SERVING (QUEUE #${currentlyServing.queueNumber})</p>
                             <div class="flex items-center justify-between mt-1">
                                 <div>
                                     <p class="text-lg font-bold">User #${currentlyServing.userId}</p>
@@ -156,14 +116,15 @@
                             </div>
                         </div>
                         ` : ''}
-
-                        <!-- Up Next List -->
                         <div class="space-y-2">
                              <h3 class="font-bold text-gray-600 mt-4">Up Next:</h3>
                              ${upNext.length > 0 ? upNext.map(apt => `
                                 <div class="bg-gray-50 p-3 rounded-md flex justify-between items-center">
-                                    <p class="font-semibold">User #${apt.userId}</p>
-                                    <p class="text-sm text-gray-500">${apt.timeSlot}</p>
+                                    <div>
+                                        <p class="font-semibold">User #${apt.userId}</p>
+                                        <p class="text-xs text-gray-500">Queue #${apt.queueNumber}</p>
+                                    </div>
+                                    <p class="text-sm text-gray-500 font-medium">${apt.timeSlot}</p>
                                 </div>
                              `).join('') : '<p class="text-sm text-gray-400 p-3">No one else is in this queue.</p>'}
                         </div>
@@ -172,7 +133,6 @@
             }).join('');
         }
 
-        // --- 5. USER ACTIONS ---
         async function updateStatus(id, status) {
             const token = localStorage.getItem('token');
             try {
@@ -185,13 +145,11 @@
                     const err = await response.json();
                     throw new Error(err.message || 'Failed to update status');
                 }
-                // The socket listener will automatically handle the UI refresh
             } catch (error) {
                 alert(`Error: ${error.message}`);
             }
         }
 
-        // --- 6. UTILITY ---
         function logout() {
             localStorage.clear();
             window.location.href = 'adminaccess.html';
