@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Poppins', sans-serif; }
-        .hero-banner { background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1593349328403-227d408f6562?q=80&w=1974&auto=format=fit=crop') center/cover; }
+        .hero-banner { background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1593349328403-227d408f6562?q=80&w=1974&auto=format&fit=crop') center/cover; }
         .service-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .service-card:hover { transform: translateY(-10px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
     </style>
@@ -39,47 +39,58 @@
                         <i class="fas fa-tools fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Device Repair</h3>
                         <p class="text-gray-600 mb-6">Schedule a time to bring in your electronics or appliances for repair.</p>
-                        <!-- ✅ UPDATED LINK -->
-                        <a href="#" onclick="bookService('Device Repair'); return false;" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
+                        <button onclick="bookService('Device Repair')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-headset fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Technical Support</h3>
                         <p class="text-gray-600 mb-6">Book a one-on-one session with a tech expert for troubleshooting.</p>
-                        <!-- ✅ UPDATED LINK -->
-                        <a href="#" onclick="bookService('Technical Support'); return false;" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
+                        <button onclick="bookService('Technical Support')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-shield-alt fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Warranty Claims</h3>
                         <p class="text-gray-600 mb-6">Process warranty claims and product replacements with our team.</p>
-                        <!-- ✅ UPDATED LINK -->
-                        <a href="#" onclick="bookService('Warranty Claims'); return false;" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
+                        <button onclick="bookService('Warranty Claims')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-exchange-alt fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Returns & Exchanges</h3>
                         <p class="text-gray-600 mb-6">Skip the line for product returns or exchanges at our centers.</p>
-                        <!-- ✅ UPDATED LINK -->
-                        <a href="#" onclick="bookService('Returns & Exchanges'); return false;" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
+                        <button onclick="bookService('Returns & Exchanges')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- ✅ NEW: SCRIPT TAG ADDED -->
-    <script>
-        function bookService(serviceName) {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                alert('Please login first to book an appointment!');
-                window.location.href = '../User/UserRegLogForm.html';
-                return;
-            }
-            sessionStorage.setItem('selectedService', serviceName);
-            window.location.href = '../Branches/Select-Slot.html';
+   <!-- // This script should be placed right before the </body> tag in all your service pages. -->
+<script>
+    function bookService(serviceName) {
+        // Step 1: ALWAYS store the user's intent first.
+        sessionStorage.setItem('selectedService', serviceName);
+
+        // Step 2: Check if the user is logged in.
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+
+        if (!token || !user) {
+            // If they are not logged in, alert them and redirect to the login page.
+            // The login page will now know what to do next because we saved the service name.
+            alert('Please login or register to continue booking.');
+            window.location.href = '../User/UserRegLogForm.html';
+            return; // Stop the function here.
         }
-    </script>
+
+        // Step 3: If they are already logged in, proceed directly to the booking page.
+        window.location.href = '../Branches/Select-Slot.html';
+    }
+</script>
+
+
 </body>
 </html>

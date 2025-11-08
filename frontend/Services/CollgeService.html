@@ -39,42 +39,57 @@
                         <i class="fas fa-file-signature fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Admissions Office</h3>
                         <p class="text-gray-600 mb-6 flex-grow">For prospective students, application queries, and campus tours.</p>
-                        <a href="#" onclick="bookService('Admissions Office')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
+                        <button onclick="bookService('Admissions Office')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center flex flex-col">
                         <i class="fas fa-graduation-cap fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Registrar's Office</h3>
                         <p class="text-gray-600 mb-6 flex-grow">Manage course registration, academic records, and transcripts.</p>
-                        <a href="#" onclick="bookService('Registrar\'s Office')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
+                        <button onclick="bookService('Registrar\'s Office')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center flex flex-col">
                         <i class="fas fa-dollar-sign fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Financial Aid</h3>
                         <p class="text-gray-600 mb-6 flex-grow">Discuss scholarships, grants, and student loan options with a counselor.</p>
-                        <a href="#" onclick="bookService('Financial Aid')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
+                        <button onclick="bookService('Financial Aid')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center flex flex-col">
                         <i class="fas fa-university fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Student Affairs</h3>
                         <p class="text-gray-600 mb-6 flex-grow">For housing, counseling, and other student life-related services.</p>
-                        <a href="#" onclick="bookService('Student Affairs')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
+                        <button onclick="bookService('Student Affairs')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <script>
-        function bookService(serviceName) {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                alert('Please login first to book an appointment!');
-                window.location.href = '../User/UserRegLogForm.html';
-                return;
-            }
-            sessionStorage.setItem('selectedService', serviceName);
-            window.location.href = '../Branches/Select-Slot.html';
+<!-- // This script should be placed right before the </body> tag in all your service pages. -->
+<script>
+    function bookService(serviceName) {
+        // Step 1: ALWAYS store the user's intent first.
+        sessionStorage.setItem('selectedService', serviceName);
+
+        // Step 2: Check if the user is logged in.
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+
+        if (!token || !user) {
+            // If they are not logged in, alert them and redirect to the login page.
+            // The login page will now know what to do next because we saved the service name.
+            alert('Please login or register to continue booking.');
+            window.location.href = '../User/UserRegLogForm.html';
+            return; // Stop the function here.
         }
-    </script>
+
+        // Step 3: If they are already logged in, proceed directly to the booking page.
+        window.location.href = '../Branches/Select-Slot.html';
+    }
+</script>
+
 </body>
 </html>

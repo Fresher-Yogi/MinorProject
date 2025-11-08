@@ -1,4 +1,4 @@
-// --- FINAL, UPDATED CODE for backend/src/routes/appointmentRoutes.js ---
+// Backend/src/routes/appointmentRoutes.js
 
 const express = require('express');
 const router = express.Router();
@@ -11,34 +11,28 @@ const User = require('../models/user');
 // @desc    Create a new appointment for the logged-in user
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { branchId, serviceType, appointmentDate, timeSlot } = req.body;
+    // ✅ CORRECTED: Now expects serviceType (string) instead of serviceId
+    const { branchId, serviceType, appointmentDate, timeSlot, notes } = req.body;
     
-    // Basic validation
+    // ✅ CORRECTED: Validation now checks for serviceType
     if (!branchId || !serviceType || !appointmentDate || !timeSlot) {
         return res.status(400).json({ message: 'Please provide all required fields.' });
     }
 
-    // --- ✅ NEW LOGIC TO CALCULATE QUEUE NUMBER ---
-    // Count how many appointments already exist for this branch on this specific day.
     const todaysAppointments = await Appointment.count({
-      where: {
-        branchId: branchId,
-        appointmentDate: appointmentDate
-      }
+      where: { branchId: branchId, appointmentDate: appointmentDate }
     });
-
-    // The new queue number is the current count + 1.
     const queueNumber = todaysAppointments + 1;
-    // --- ✅ END OF NEW LOGIC ---
 
     const appointment = await Appointment.create({
       userId: req.user.id,
       branchId,
-      serviceType,
+      serviceType, // ✅ CORRECTED: Saves the serviceType string
       appointmentDate,
       timeSlot,
+      notes,
       status: 'pending',
-      queueNumber: queueNumber // ✅ Save the new queue number to the database
+      queueNumber: queueNumber
     });
 
     res.status(201).json({ 
@@ -61,14 +55,12 @@ router.get('/my-appointments', authMiddleware, async (req, res) => {
     });
     res.json(appointments);
   } catch (error) {
-    console.error(error.message);
     res.status(500).json({ message: 'Server Error' });
   }
 });
 
-
 // @route   GET /api/appointments
-// @desc    Get appointments for Admins (Super Admin gets all, Branch Admin gets their branch's)
+// @desc    Get appointments for Admins
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id);
@@ -76,28 +68,21 @@ router.get('/', authMiddleware, async (req, res) => {
 
     if (user.role === 'admin') {
        const branch = await Branch.findOne({ where: { adminId: user.id } });
-       if (!branch) {
-           return res.json([]);
-       }
+       if (!branch) return res.json([]);
        whereClause.branchId = branch.id;
-
     } else if (user.role !== 'superadmin') {
-       return res.status(403).json({ message: 'Access Denied for this role.' });
+       return res.status(403).json({ message: 'Access Denied.' });
     }
 
     const appointments = await Appointment.findAll({
       where: whereClause,
       order: [['appointmentDate', 'DESC'], ['timeSlot', 'ASC']]
     });
-
     res.json(appointments);
-
   } catch (error) {
-    console.error(error.message);
     res.status(500).json({ message: 'Server Error' });
   }
 });
-
 
 // @route   PUT /api/appointments/:id/status
 // @desc    Update an appointment's status (for Admins)
@@ -106,7 +91,6 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
     if (user.role !== 'admin' && user.role !== 'superadmin') {
         return res.status(403).json({ message: 'Access Denied.' });
     }
-
     try {
         const { status } = req.body;
         if (!['pending', 'completed', 'cancelled'].includes(status)) {
@@ -130,17 +114,35 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
         if (req.io) {
             req.io.emit('appointmentUpdated', appointment);
         }
-
-        res.json({
-            message: `Appointment #${appointment.id} status updated to ${status}.`,
-            appointment
-        });
-
+        res.json({ message: `Appointment status updated to ${status}.`, appointment });
     } catch (error) {
-        console.error(error.message);
         res.status(500).json({ message: 'Server Error' });
     }
 });
 
+// @route   PUT /api/appointments/:id/cancel
+// @desc    Allow a user to cancel their OWN appointment
+router.put('/:id/cancel', authMiddleware, async (req, res) => {
+    try {
+        const appointment = await Appointment.findByPk(req.params.id);
+        if (!appointment) {
+            return res.status(404).json({ message: 'Appointment not found.' });
+        }
+        if (appointment.userId !== req.user.id) {
+            return res.status(403).json({ message: 'Authorization denied.' });
+        }
+        if (appointment.status !== 'pending') {
+            return res.status(400).json({ message: `Cannot cancel an appointment with status: ${appointment.status}.` });
+        }
+        appointment.status = 'cancelled';
+        await appointment.save();
+        if (req.io) {
+            req.io.emit('appointmentUpdated', appointment);
+        }
+        res.json({ message: 'Your appointment has been successfully cancelled.', appointment });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
 
 module.exports = router;

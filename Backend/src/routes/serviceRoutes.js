@@ -1,7 +1,7 @@
-// Backend/src/routes/categoryRoutes.js
+// Backend/src/routes/serviceRoutes.js
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/categoryController');
+const controller = require('../controllers/serviceController');
 const authMiddleware = require('../middleware/authMiddleware');
 const User = require('../models/user');
 
@@ -18,12 +18,12 @@ const isSuperAdmin = async (req, res, next) => {
     }
 };
 
-// Public Route (anyone can see categories)
-router.get('/', controller.getAllCategories);
+// Public Route (users need to see services to book them)
+router.get('/', controller.getAllServices);
 
 // Protected Super Admin Routes
-router.post('/', authMiddleware, isSuperAdmin, controller.createCategory);
-router.put('/:id', authMiddleware, isSuperAdmin, controller.updateCategory);
-router.delete('/:id', authMiddleware, isSuperAdmin, controller.deleteCategory);
+router.post('/', authMiddleware, isSuperAdmin, controller.createService);
+router.put('/:id', authMiddleware, isSuperAdmin, controller.updateService);
+router.delete('/:id', authMiddleware, isSuperAdmin, controller.deleteService);
 
 module.exports = router;

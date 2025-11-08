@@ -7,34 +7,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- ✅ Add Socket.IO -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style> body { font-family: 'Poppins', sans-serif; } .sidebar-link-active { background-color: #2563eb; color: white; } </style>
 </head>
 <body class="bg-gray-100 flex h-screen">
 
-    <!-- Sidebar -->
     <aside class="w-64 bg-gray-800 text-gray-300 flex flex-col">
         <div class="p-5 text-white text-2xl font-bold border-b border-gray-700">Admin Panel</div>
         <nav class="flex-1 p-3 space-y-2">
-            <a href="admindashboard.html" class="flex items-center p-3 rounded-lg sidebar-link-active bg-blue-600">
-                <i class="fas fa-tachometer-alt w-8"></i>Dashboard
-            </a>
-            <a href="adminQueueManage.html" class="flex items-center p-3 rounded-lg hover:bg-gray-700 cursor-pointer">
-                <i class="fas fa-users w-8"></i>Manage Queues
-            </a>
-            <a href="adminReports.html" class="flex items-center p-3 rounded-lg hover:bg-gray-700 cursor-pointer">
-                <i class="fas fa-chart-bar w-8"></i>Reports
-            </a>
+            <a href="admindashboard.html" class="flex items-center p-3 rounded-lg sidebar-link-active bg-blue-600"><i class="fas fa-tachometer-alt w-8"></i>Dashboard</a>
+            <a href="adminQueueManage.html" class="flex items-center p-3 rounded-lg hover:bg-gray-700 cursor-pointer"><i class="fas fa-users w-8"></i>Manage Queues</a>
+            <!-- ✅ NEW: Link to the settings page -->
+            <a href="admin-settings.html" class="flex items-center p-3 rounded-lg hover:bg-gray-700 cursor-pointer"><i class="fas fa-cog w-8"></i>Branch Settings</a>
         </nav>
         <div class="p-5 border-t border-gray-700">
-            <button onclick="logout()" class="flex items-center text-red-400 hover:text-red-300 cursor-pointer w-full">
-                <i class="fas fa-sign-out-alt w-8"></i>Logout
-            </button>
+            <button onclick="logout()" class="flex items-center text-red-400 hover:text-red-300 cursor-pointer w-full"><i class="fas fa-sign-out-alt w-8"></i>Logout</button>
         </div>
     </aside>
 
-    <!-- Main Content -->
     <div class="flex-1 flex flex-col">
         <header class="bg-white shadow p-4 flex justify-between items-center">
             <h1 class="text-2xl font-semibold text-gray-800">Branch Dashboard</h1>
@@ -42,6 +32,16 @@
         </header>
 
         <main class="flex-1 p-6 overflow-y-auto">
+            
+            <!-- ✅ NEW: Branch Information Section -->
+            <div id="branch-info-container" class="mb-6">
+                <!-- This will be filled by JavaScript -->
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+                    <p class="font-bold">Not Assigned</p>
+                    <p>You are not assigned to a branch. Please contact a Super Admin.</p>
+                </div>
+            </div>
+
              <!-- Stats Cards -->
             <div id="stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div class="bg-blue-100 p-6 rounded-lg shadow flex items-center justify-between">
@@ -63,21 +63,10 @@
                     <h2 class="font-bold text-xl">📋 Recent Appointments</h2>
                     <button onclick="loadDashboard()" class="text-blue-600 hover:underline text-sm"><i class="fas fa-sync mr-1"></i>Refresh</button>
                 </div>
-                <div class="overflow-x-auto">
+                <div id="appointments-container" class="overflow-x-auto">
                     <table class="w-full text-left">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="py-3 px-4">ID</th>
-                                <th class="py-3 px-4">User ID</th>
-                                <th class="py-3 px-4">Service</th>
-                                <th class="py-3 px-4">Date & Time</th>
-                                <th class="py-3 px-4">Status</th>
-                                <th class="py-3 px-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="appointments-table">
-                            <tr><td colspan="6" class="py-8 px-4 text-center"><i class="fas fa-spinner fa-spin text-2xl text-blue-500"></i></td></tr>
-                        </tbody>
+                        <thead class="bg-gray-50"><tr><th class="py-3 px-4">ID</th><th class="py-3 px-4">User</th><th class="py-3 px-4">Service</th><th class="py-3 px-4">Date & Time</th><th class="py-3 px-4">Status</th><th class="py-3 px-4">Actions</th></tr></thead>
+                        <tbody id="appointments-table"><tr><td colspan="6" class="py-8 px-4 text-center"><i class="fas fa-spinner fa-spin text-2xl text-blue-500"></i></td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -85,20 +74,16 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:5000'; // Base URL for Socket.io
+        const API_URL = 'http://localhost:5000';
         const socket = io(API_URL);
 
-        // Listen for real-time updates
-        socket.on('appointmentUpdated', (updatedApt) => {
-            // Play a subtle sound notification (optional)
-            // Beep code here if desired
-            // Refresh data
-            loadDashboard();
-        });
+        socket.on('appointmentUpdated', (updatedApt) => { loadDashboard(); });
 
+        // ✅ UPDATED: This function now fetches branch info AND appointments
         async function loadDashboard() {
             const token = localStorage.getItem('token');
             const adminUser = JSON.parse(localStorage.getItem('user'));
+
             if (!token || !adminUser || (adminUser.role !== 'admin' && adminUser.role !== 'superadmin')) {
                 window.location.href = 'adminaccess.html';
                 return;
@@ -106,18 +91,38 @@
             document.getElementById('admin-name').textContent = `Welcome, ${adminUser.name}!`;
 
             try {
-                const response = await fetch(`${API_URL}/api/appointments`, {
-                    headers: { 'x-auth-token': token }
-                });
+                // Fetch both branch details and appointments at the same time
+                const [branchRes, appointmentsRes] = await Promise.all([
+                    fetch(`${API_URL}/api/branches/my-branch`, { headers: { 'x-auth-token': token } }),
+                    fetch(`${API_URL}/api/appointments`, { headers: { 'x-auth-token': token } })
+                ]);
+                
+                // Handle Branch Info
+                const branchContainer = document.getElementById('branch-info-container');
+                if (branchRes.ok) {
+                    const branch = await branchRes.json();
+                    branchContainer.innerHTML = `
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h2 class="text-xl font-bold text-gray-800">Managing: ${branch.name}</h2>
+                            <p class="text-gray-600"><i class="fas fa-map-marker-alt mr-2"></i>${branch.location}</p>
+                        </div>
+                    `;
+                } else {
+                    // Keep the default "Not Assigned" message
+                    document.getElementById('appointments-container').innerHTML = `<p class="text-center py-8">Please ask a Super Admin to assign you to a branch to see appointments.</p>`;
+                    return; // Stop if not assigned to a branch
+                }
 
-                if (!response.ok) throw new Error('Failed to fetch data.');
-                const appointments = await response.json();
+                // Handle Appointments
+                if (!appointmentsRes.ok) throw new Error('Failed to fetch appointments.');
+                const appointments = await appointmentsRes.json();
                 
                 updateStats(appointments);
                 displayAppointments(appointments);
+
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('appointments-table').innerHTML = `<tr><td colspan="6" class="py-8 px-4 text-center text-red-500">❌ Failed to load appointments.</td></tr>`;
+                document.getElementById('appointments-table').innerHTML = `<tr><td colspan="6" class="py-8 px-4 text-center text-red-500">❌ ${error.message}</td></tr>`;
             }
         }
         
@@ -134,7 +139,6 @@
                 return;
             }
             
-            // Sort by date desc, then status pending first
             appointments.sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate));
             
             table.innerHTML = appointments.map(a => {
@@ -168,11 +172,8 @@
                     body: JSON.stringify({ status })
                 });
                 if (!res.ok) throw new Error('Update failed');
-                // Socket.IO will trigger re-fetch, but we fetch here too just in case
                 loadDashboard();
-            } catch (err) {
-                alert(err.message);
-            }
+            } catch (err) { alert(err.message); }
         }
 
         function logout() {

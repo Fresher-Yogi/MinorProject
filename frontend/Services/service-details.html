@@ -10,7 +10,7 @@
     <style>
         body { font-family: 'Poppins', sans-serif; }
         .service-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .service-card:hover { transform: translateY(-10px); }
+        .service-card:hover { transform: translateY(-10px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -18,7 +18,9 @@
     <header class="bg-white shadow-md sticky top-0 z-50">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             <a href="../index.html" class="text-3xl font-bold text-blue-600">QMS</a>
-            <a href="../index.html#services" class="text-blue-600 hover:underline"><i class="fas fa-arrow-left mr-2"></i> Back to All Services</a>
+            <a href="../index.html#services" class="text-blue-600 hover:underline">
+                <i class="fas fa-arrow-left mr-2"></i> Back to All Services
+            </a>
         </nav>
     </header>
 
@@ -32,16 +34,21 @@
 
         <section class="py-24">
             <div class="container mx-auto px-6">
-                <div class="text-center mb-16"><h2 id="sub-service-title" class="text-4xl font-bold inline-block border-b-4 border-blue-500 pb-3">Available Departments</h2></div>
+                <div class="text-center mb-16">
+                    <h2 id="sub-service-title" class="text-4xl font-bold inline-block border-b-4 border-blue-500 pb-3">Available Departments</h2>
+                </div>
                 <div id="sub-services-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-                    <div class="col-span-full text-center py-8"><i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i></div>
+                    <div class="col-span-full text-center py-8">
+                        <i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i>
+                    </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- ✅ SCRIPT SECTION IS NOW COMPLETE AND FUNCTIONAL -->
     <script>
+        const API_URL = 'http://localhost:5000/api';
+
         window.addEventListener('DOMContentLoaded', () => {
             loadServiceDetails();
         });
@@ -51,60 +58,87 @@
             const categoryId = params.get('id');
 
             if (!categoryId) {
-                document.body.innerHTML = `<div class="text-center p-10 text-red-500"><h1>Error: No Category ID provided.</h1><a href="../index.html">Go Back</a></div>`;
+                document.body.innerHTML = `
+                    <div class="min-h-screen flex items-center justify-center">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle text-red-500 text-5xl mb-4"></i>
+                            <h1 class="text-2xl font-bold text-gray-800 mb-4">Error: No Category ID provided</h1>
+                            <a href="../index.html" class="text-blue-600 hover:underline">Go Back to Home</a>
+                        </div>
+                    </div>
+                `;
                 return;
             }
 
             try {
-                const response = await fetch(`http://localhost:5000/api/categories/${categoryId}`);
-                if (!response.ok) throw new Error('Category not found.');
+                const response = await fetch(`${API_URL}/categories/${categoryId}`);
+                if (!response.ok) throw new Error('Category not found');
 
                 const category = await response.json();
 
+                // Update page content
                 document.title = `${category.name} Services - QMS`;
                 document.getElementById('category-title').textContent = `${category.name} Services`;
-                document.getElementById('category-description').textContent = category.description || `Please select a service below to book your appointment.`;
+                document.getElementById('category-description').textContent = category.description || 'Please select a service below to book your appointment.';
                 document.getElementById('sub-service-title').textContent = `Available ${category.name} Departments`;
 
                 const subServicesGrid = document.getElementById('sub-services-grid');
+
+                // Check if sub-services exist
                 if (!category.subServices || category.subServices.trim() === '') {
-                    subServicesGrid.innerHTML = `<p class="col-span-full text-gray-500">No specific services have been configured for this category yet.</p>`;
+                    subServicesGrid.innerHTML = `
+                        <div class="col-span-full text-center py-12">
+                            <i class="fas fa-info-circle text-gray-400 text-4xl mb-4"></i>
+                            <p class="text-gray-500 font-semibold">No specific services configured for this category yet.</p>
+                            <p class="text-gray-400 text-sm mt-2">Please contact the administrator.</p>
+                        </div>
+                    `;
                     return;
                 }
+
+                // Split sub-services and render them
+                const subServices = category.subServices.split(',').map(s => s.trim()).filter(s => s);
                 
-                const subServices = category.subServices.split(',').map(s => s.trim());
                 subServicesGrid.innerHTML = subServices.map(subService => `
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center flex flex-col">
                         <i class="fas ${category.icon || 'fa-tag'} fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3 flex-grow">${subService}</h3>
-                        
-                        <!-- THIS IS THE CRITICAL PART -->
-                        <a href="#" onclick="bookService('${subService}')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                        <button onclick="bookService('${subService.replace(/'/g, "\\'")}', '${category.name.replace(/'/g, "\\'")}', '${category.icon || 'fa-tag'}')" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">
+                            <i class="fas fa-calendar-plus mr-2"></i>Book Now
+                        </button>
                     </div>
                 `).join('');
 
             } catch (error) {
                 console.error("Failed to load category details:", error);
-                document.getElementById('sub-services-grid').innerHTML = `<p class="col-span-full text-red-500">${error.message}</p>`;
+                document.getElementById('sub-services-grid').innerHTML = `
+                    <div class="col-span-full bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-2xl mb-2"></i>
+                        <p class="text-red-700 font-semibold">${error.message}</p>
+                        <p class="text-red-600 text-sm mt-2">Please check if the backend server is running.</p>
+                    </div>
+                `;
             }
         }
 
-        // This is the function that makes the "Book Now" button work
-        function bookService(serviceName) {
-            // 1. Check if the user is logged in
+        function bookService(serviceName, categoryName, icon) {
+            // Check if user is logged in
             const token = localStorage.getItem('token');
             if (!token) {
                 alert('Please login first to book an appointment!');
                 window.location.href = '../User/UserRegLogForm.html';
                 return;
             }
-            
-            // 2. Save the selected sub-service name (e.g., "Cardiology")
+
+            // Store the selected service information
             sessionStorage.setItem('selectedService', serviceName);
-            
-            // 3. Redirect to the universal slot booking page
-            window.location.href = 'Select-Slot.html';
+            sessionStorage.setItem('selectedCategory', categoryName);
+            sessionStorage.setItem('selectedIcon', icon);
+
+            // Redirect to branch and slot selection page
+            window.location.href = '../Branches/Select-Slot.html';
         }
     </script>
 </body>
-</html>```
+</html>

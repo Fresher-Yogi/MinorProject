@@ -16,11 +16,11 @@
 </head>
 <body class="bg-gray-50">
 
-    <!-- Header (Can be copied from index.html for consistency) -->
+    <!-- Header -->
     <header class="bg-white shadow-md sticky top-0 z-50">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="index.html" class="text-3xl font-bold text-blue-600">QMS</a>
-            <a href="index.html" class="text-blue-600 hover:underline"><i class="fas fa-arrow-left mr-2"></i> Back to All Services</a>
+            <a href="../index.html" class="text-3xl font-bold text-blue-600">QMS</a>
+            <a href="../index.html#services" class="text-blue-600 hover:underline"><i class="fas fa-arrow-left mr-2"></i> Back to All Services</a>
         </nav>
     </header>
 
@@ -40,66 +40,72 @@
                     <h2 class="text-4xl font-bold inline-block border-b-4 border-blue-500 pb-3">Available Departments</h2>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-                    <!-- Service Card 1 -->
+                    
+                    <!-- Service Card 1: General Consultation -->
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-stethoscope fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">General Consultation</h3>
                         <p class="text-gray-600 mb-6">Routine check-ups and health assessments with our general physicians.</p>
-                        <!-- <a href="#" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a> -->
-                        <a href="#" onclick="bookService('General Consultation'); return false;" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300 ">Book Now</a>
+                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
+                        <button onclick="bookService('General Consultation')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
 
-                    <!-- Service Card 2 -->
+                    <!-- Service Card 2: Cardiology -->
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-heartbeat fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Cardiology</h3>
                         <p class="text-gray-600 mb-6">Specialized care for heart conditions, including ECG and consultations.</p>
-                        <!-- <a href="#" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a> -->
-                         <a href="#" onclick="bookService('Cardiology'); return false;" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
+                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
+                         <button onclick="bookService('Cardiology')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
 
-                    <!-- Service Card 3 -->
+                    <!-- Service Card 3: Pediatrics -->
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-baby fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Pediatrics</h3>
                         <p class="text-gray-600 mb-6">Expert healthcare for infants, children, and adolescents.</p>
-                        <!-- <a href="#" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a> -->
-                        <a href="#" onclick="bookService('Pediatrics'); return false;" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</a>
-
+                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
+                        <button onclick="bookService('Pediatrics')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
-                    <!-- Service Card 4 -->
+
+                    <!-- Service Card 4: Emergency Care -->
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-first-aid fa-3x text-red-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Emergency Care</h3>
                         <p class="text-gray-600 mb-6">Immediate attention for urgent medical conditions. Check-in online.</p>
-                        <!-- <a href="#" class="w-full block bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition duration-300">Check-in Now</a> -->
-                        <a href="#" onclick="bookService('Emergency Care'); return false;" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300"> Check-in Now </a>
-
+                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
+                        <button onclick="bookService('Emergency Care')" class="w-full block bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition duration-300">Check-in Now</button>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-   <script>
-const API_URL = 'http://localhost:5000/api';
+  
+    <!-- // This script should be placed right before the </body> tag in all your service pages. -->
+<script>
+    function bookService(serviceName) {
+        // Step 1: ALWAYS store the user's intent first.
+        sessionStorage.setItem('selectedService', serviceName);
 
-async function bookService(serviceName) {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        alert('Please login first to book an appointment!');
-        window.location.href = '../User/UserRegLogForm.html';
-        return;
+        // Step 2: Check if the user is logged in.
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+
+        if (!token || !user) {
+            // If they are not logged in, alert them and redirect to the login page.
+            // The login page will now know what to do next because we saved the service name.
+            alert('Please login or register to continue booking.');
+            window.location.href = '../User/UserRegLogForm.html';
+            return; // Stop the function here.
+        }
+
+        // Step 3: If they are already logged in, proceed directly to the booking page.
+        window.location.href = '../Branches/Select-Slot.html';
     }
-    
-    // Store selected service in sessionStorage
-    sessionStorage.setItem('selectedService', serviceName);
-    
-    // Redirect to slot selection page
-    window.location.href = '../Branches/Select-Slot.html';
-}
 </script>
+
+
 
 </body>
 </html>

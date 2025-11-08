@@ -22,6 +22,7 @@
     <main class="flex-1 p-6 overflow-y-auto">
         <h1 class="text-3xl font-bold text-gray-800 mb-6">Pending Admin Approvals</h1>
         <div id="approvals-container" class="space-y-4">
+            <!-- This is the spinner that shows initially -->
             <div class="text-center py-8"><i class="fas fa-spinner fa-spin text-purple-500 text-3xl"></i><p class="mt-2 text-gray-600">Loading pending approvals...</p></div>
         </div>
     </main>
@@ -29,10 +30,86 @@
     <script>
         const API_URL = 'http://localhost:5000/api';
 
-        window.addEventListener('DOMContentLoaded', loadPendingAdmins);
-        async function loadPendingAdmins() { /* ... no changes ... */ }
+        // ✅ --- THIS IS THE CRITICAL NEW/UPDATED CODE --- ✅
 
-        // ✅ UPDATED: updateAdminStatus function
+        // When the page loads, run the function to load pending admins
+        window.addEventListener('DOMContentLoaded', () => {
+            // First, check if a superadmin is logged in
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!token || !user || user.role !== 'superadmin') {
+                alert('Access Denied. You must be a Super Admin to view this page.');
+                window.location.href = 'superadmin_access.html';
+                return;
+            }
+            loadPendingAdmins();
+        });
+
+        // This function fetches the data from the backend
+        async function loadPendingAdmins() {
+            const token = localStorage.getItem('token');
+            const container = document.getElementById('approvals-container');
+            const badge = document.getElementById('pending-count-badge');
+
+            try {
+                // Call the backend API, making sure to send the authentication token
+                const response = await fetch(`${API_URL}/auth/admins/pending`, {
+                    headers: {
+                        'x-auth-token': token
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data from server. You may not have permission.');
+                }
+
+                const pendingAdmins = await response.json();
+
+                // Update the notification badge
+                if (pendingAdmins.length > 0) {
+                    badge.textContent = pendingAdmins.length;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+
+                // If there are no pending admins, show a message
+                if (pendingAdmins.length === 0) {
+                    container.innerHTML = `
+                        <div class="bg-white p-8 rounded-lg shadow text-center">
+                            <i class="fas fa-check-circle text-green-500 text-4xl"></i>
+                            <p class="mt-4 font-semibold text-gray-700">No pending admin approvals at this time.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // If there are pending admins, create HTML cards for each one
+                container.innerHTML = pendingAdmins.map(admin => `
+                    <div class="bg-white p-5 rounded-lg shadow flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                        <div>
+                            <p class="font-bold text-lg text-gray-800">${admin.name}</p>
+                            <p class="text-sm text-gray-500">${admin.email}</p>
+                            <p class="text-xs text-gray-400 mt-1">Registered on: ${new Date(admin.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <div class="flex gap-3 mt-4 sm:mt-0">
+                            <button onclick="updateAdminStatus(${admin.id}, 'approved')" class="bg-green-100 hover:bg-green-200 text-green-700 font-bold py-2 px-4 rounded-lg transition">
+                                <i class="fas fa-check mr-2"></i>Approve
+                            </button>
+                            <button onclick="updateAdminStatus(${admin.id}, 'rejected')" class="bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 px-4 rounded-lg transition">
+                                <i class="fas fa-times mr-2"></i>Reject
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading approvals:', error);
+                container.innerHTML = `<div class="bg-red-100 text-red-700 p-4 rounded-lg">Error: ${error.message}</div>`;
+            }
+        }
+
+        // The updateAdminStatus function remains the same, it was already correct.
         async function updateAdminStatus(adminId, newStatus) {
             if (!confirm(`Are you sure you want to ${newStatus} this admin? This action cannot be undone.`)) return;
             
@@ -49,14 +126,20 @@
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.message);
                 alert(`✅ ${data.message}`);
-                loadPendingAdmins();
+                loadPendingAdmins(); // Refresh the list after updating
             } catch (error) {
                 alert(`❌ ${error.message}`);
                 buttons.forEach(button => button.disabled = false);
             }
         }
         
-        function handleLogout() { /* ... no changes ... */ }
+        function handleLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'superadmin_access.html';
+            }
+        }
     </script>
 </body>
-</html>```
+</html>

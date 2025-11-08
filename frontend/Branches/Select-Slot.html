@@ -1,78 +1,263 @@
-<!-- The code for Select-Slot.html is already updated and correct from our previous step. -->
-<!-- However, to maintain consistency, here is the code again with the standardized showToast function. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Branch & Slot - QMS</title>
+    <title>Book Your Slot - QMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    
-    <!-- ✅ NEW: Toastify CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    
-    <style> /* ... all styles are the same ... */ </style>
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f4f8; }
+        .time-slot { transition: all 0.2s ease; cursor: pointer; }
+        .time-slot:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .time-slot.selected { background: #2563eb; color: white; border-color: #1d4ed8; }
+        .step-indicator { position: relative; }
+        .step-indicator::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: #e5e7eb; z-index: 0; transform: translateY(-50%); }
+        .step { position: relative; z-index: 1; }
+        .step-circle { transition: background-color 0.3s ease; }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <!-- ... all HTML content is the same ... -->
+<body>
 
-    <!-- ✅ NEW: Toastify JavaScript -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <header class="bg-white shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="../index.html" class="text-3xl font-bold text-blue-600">QMS</a>
+            <a href="../index.html#services" class="text-blue-600 hover:underline">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Categories
+            </a>
+        </nav>
+    </header>
 
-    <script>
-        const API_URL = 'http://localhost:5000/api';
-        let selectedBranch = null;
-        let selectedDate = null;
-        let selectedTime = null;
-        let branches = [];
+    <main class="container mx-auto px-6 py-12 max-w-5xl">
+        
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8 flex items-center">
+            <div class="bg-blue-100 rounded-full p-4 mr-4">
+                <i id="category-icon" class="fas fa-stethoscope text-blue-600 text-2xl"></i>
+            </div>
+            <div>
+                <h3 class="text-sm text-gray-500 font-semibold uppercase">Booking For</h3>
+                <h2 id="service-name-header" class="text-2xl font-bold text-gray-800">Loading Service...</h2>
+            </div>
+        </div>
 
-        // ✅ NEW: Toast helper
-        function showToast(message, isError = false) {
-            Toastify({
-                text: message,
-                duration: 3000,
-                close: true,
-                gravity: "top", position: "right",
-                style: { background: isError ? "#ef4444" : "#22c55e" },
-            }).showToast();
+        <!-- Step Indicator -->
+        <div class="mb-12">
+             <div class="step-indicator flex justify-between items-center">
+                <div class="step text-center"><div id="step-1-circle" class="step-circle w-12 h-12 mx-auto bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-2">1</div><p id="step-1-text" class="text-sm font-semibold text-blue-600">Choose Branch</p></div>
+                <div class="step text-center"><div id="step-2-circle" class="step-circle w-12 h-12 mx-auto bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold mb-2">2</div><p id="step-2-text" class="text-sm text-gray-500">Choose Date</p></div>
+                <div class="step text-center"><div id="step-3-circle" class="step-circle w-12 h-12 mx-auto bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold mb-2">3</div><p id="step-3-text" class="text-sm text-gray-500">Pick Time</p></div>
+                <div class="step text-center"><div id="step-4-circle" class="step-circle w-12 h-12 mx-auto bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold mb-2">4</div><p id="step-4-text" class="text-sm text-gray-500">Confirm</p></div>
+            </div>
+        </div>
+
+        <!-- ✅ SIMPLIFIED: Step 1 now ONLY asks for the Branch -->
+        <div id="step-1" class="bg-white rounded-xl shadow-lg p-8 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4"><i class="fas fa-hospital mr-3 text-blue-600"></i>Step 1: Choose a Branch</h2>
+            <div>
+                <label for="branch-select" class="font-semibold text-gray-700">Available Branches</label>
+                <select id="branch-select" class="w-full p-3 border-2 border-gray-300 rounded-lg mt-1 focus:border-blue-500 focus:outline-none">
+                     <option value="">Loading branches...</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Step 2: Date Selection (Hidden by default) -->
+        <div id="step-2" class="bg-white rounded-xl shadow-lg p-8 mb-6 hidden">
+             <h2 class="text-2xl font-bold mb-6 text-gray-800"><i class="fas fa-calendar mr-3 text-blue-600"></i>Step 2: Choose a Date</h2>
+            <input type="date" id="date-select" class="w-full p-3 border-2 border-gray-300 rounded-lg text-lg focus:border-blue-500 focus:outline-none">
+        </div>
+
+        <!-- Step 3: Time Slot Selection (Hidden by default) -->
+        <div id="step-3" class="bg-white rounded-xl shadow-lg p-8 mb-6 hidden">
+             <h2 class="text-2xl font-bold mb-6 text-gray-800"><i class="fas fa-clock mr-3 text-blue-600"></i>Step 3: Pick Your Time Slot</h2>
+            <div id="time-slots-container" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        </div>
+
+        <!-- Step 4: Confirmation (Hidden by default) -->
+        <div id="step-4" class="bg-white rounded-xl shadow-lg p-8 hidden">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800"><i class="fas fa-check-circle mr-3 text-green-600"></i>Step 4: Confirm Your Appointment</h2>
+            <div class="bg-gray-50 rounded-lg p-6 mb-6 space-y-3 text-lg">
+                <div class="flex justify-between border-b pb-2"><span class="font-semibold text-gray-700">Service:</span><span id="confirm-service" class="text-blue-600 font-bold text-right"></span></div>
+                <div class="flex justify-between border-b pb-2"><span class="font-semibold text-gray-700">Branch:</span><span id="confirm-branch" class="text-blue-600 font-bold text-right"></span></div>
+                <div class="flex justify-between border-b pb-2"><span class="font-semibold text-gray-700">Date:</span><span id="confirm-date" class="text-blue-600 font-bold text-right"></span></div>
+                <div class="flex justify-between"><span class="font-semibold text-gray-700">Time:</span><span id="confirm-time" class="text-blue-600 font-bold text-right"></span></div>
+            </div>
+            <button id="confirm-btn" onclick="confirmAppointment()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg text-lg transition">
+                <i class="fas fa-check mr-2"></i>Book My Slot
+            </button>
+        </div>
+    </main>
+
+<!-- ✅ THIS IS THE COMPLETE AND CORRECT SCRIPT FOR THIS PAGE -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<script>
+    const API_URL = 'http://localhost:5000/api';
+    
+    let selectedService = null;
+    let selectedBranch = null;
+    let selectedDate = null;
+    let selectedTime = null;
+    let allBranches = [];
+
+    function showToast(message, isError = false) {
+        Toastify({
+            text: message, duration: 3500, close: true, gravity: "top", position: "right",
+            style: { background: isError ? "#ef4444" : "#22c55e" },
+        }).showToast();
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        // 1. Authenticate User
+        if (!localStorage.getItem('token')) {
+            showToast('Please login first to book an appointment!', true);
+            setTimeout(() => { window.location.href = '../User/UserRegLogForm.html'; }, 2000);
+            return;
         }
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                showToast('Please login first!', true);
-                setTimeout(() => { window.location.href = '../User/UserRegLogForm.html'; }, 2000);
+        // 2. Get the chosen service from the previous page
+        selectedService = sessionStorage.getItem('selectedService');
+        if (!selectedService) {
+            document.body.innerHTML = `<h1>Error: No service was selected. Please go back and choose a service.</h1>`;
+            return;
+        }
+
+        // 3. Update the UI
+        document.getElementById('service-name-header').textContent = selectedService;
+        document.getElementById('date-select').min = new Date().toISOString().split('T')[0];
+
+        // 4. Fetch the branch data
+        await loadBranches();
+
+        // 5. Set up event listeners to move to the next step
+        document.getElementById('branch-select').addEventListener('change', handleBranchChange);
+        document.getElementById('date-select').addEventListener('change', handleDateChange);
+    });
+
+    async function loadBranches() {
+        const select = document.getElementById('branch-select');
+        try {
+            const response = await fetch(`${API_URL}/branches`);
+            if (!response.ok) throw new Error('Could not fetch branches from the server.');
+            allBranches = await response.json();
+            
+            if (allBranches.length === 0) {
+                 select.innerHTML = '<option value="">-- No branches are available --</option>';
+                 showToast('No branches have been created yet. Please contact an admin.', true);
+                 return;
+            }
+
+            select.innerHTML = '<option value="">-- Please select a branch --</option>';
+            allBranches.forEach(branch => {
+                select.innerHTML += `<option value="${branch.id}">${branch.name} - ${branch.location}</option>`;
+            });
+        } catch (error) { 
+            showToast(error.message, true);
+            select.innerHTML = '<option value="">-- Error loading branches --</option>';
+        }
+    }
+    
+    async function loadAvailableSlots() {
+        const container = document.getElementById('time-slots-container');
+        container.innerHTML = '<div class="col-span-full text-center py-4"><i class="fas fa-spinner fa-spin text-blue-500 text-2xl"></i></div>';
+        try {
+            const response = await fetch(`${API_URL}/branches/${selectedBranch.id}/available-slots?date=${selectedDate}`);
+            if (!response.ok) throw new Error('Failed to load slots for this date.');
+            const { availableSlots } = await response.json();
+
+            if (availableSlots.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-8 text-gray-500"><i class="fas fa-calendar-times text-3xl mb-3"></i><p>No slots available for this date.</p></div>`;
                 return;
             }
-            // ... rest of the function is the same
-        });
-
-        // ... (loadBranches, handleBranchChange, handleDateChange, loadAvailableSlots, etc. are all the same) ...
-
-        async function confirmAppointment() {
-            // ... (no changes until the response handling)
-            try {
-                // ... (fetch logic is the same)
-                if (response.ok) {
-                    // ✅ UPDATED: from alert() to showToast()
-                    showToast('✅ Appointment booked successfully!');
-                    sessionStorage.removeItem('selectedService');
-                    setTimeout(() => { window.location.href = '../User/User-Dashboard.html'; }, 1500);
-                } else {
-                    // ✅ UPDATED: from alert() to showToast()
-                    showToast(`❌ ${data.message || 'Failed to book appointment.'}`, true);
-                    confirmBtn.disabled = false;
-                    confirmBtn.textContent = 'Confirm Appointment';
-                }
-            } catch (error) {
-                // ✅ UPDATED: from alert() to showToast()
-                showToast('❌ Could not connect to server.', true);
-                confirmBtn.disabled = false;
-                confirmBtn.textContent = 'Confirm Appointment';
-            }
+            container.innerHTML = availableSlots.map(slot => `<button onclick="selectTimeSlot(event, '${slot}')" class="time-slot p-4 border-2 rounded-lg font-semibold">${slot}</button>`).join('');
+        } catch (error) {
+            showToast(error.message, true);
+            container.innerHTML = `<div class="col-span-full text-red-500 text-center">${error.message}</div>`;
         }
-    </script>
+    }
+    
+    function handleBranchChange(event) {
+        const branchId = event.target.value;
+        resetStep(2);
+        if (branchId) {
+            selectedBranch = allBranches.find(b => b.id == branchId);
+            activateStep(2);
+        }
+    }
+
+    function handleDateChange(event) {
+        const date = event.target.value;
+        resetStep(3);
+        if (date) {
+            selectedDate = date;
+            activateStep(3);
+            loadAvailableSlots();
+        }
+    }
+    
+    function selectTimeSlot(event, time) {
+        document.querySelectorAll('.time-slot').forEach(slot => slot.classList.remove('selected'));
+        event.target.closest('.time-slot').classList.add('selected');
+        selectedTime = time;
+        
+        document.getElementById('confirm-service').textContent = selectedService;
+        document.getElementById('confirm-branch').textContent = selectedBranch.name;
+        document.getElementById('confirm-date').textContent = new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('confirm-time').textContent = selectedTime;
+        
+        activateStep(4);
+        document.getElementById('step-4').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    function activateStep(stepNumber) {
+        document.getElementById(`step-${stepNumber}`).classList.remove('hidden');
+        document.getElementById(`step-${stepNumber}-circle`).classList.replace('bg-gray-300', 'bg-blue-600');
+        document.getElementById(`step-${stepNumber}-text`).classList.replace('text-gray-500', 'text-blue-600');
+    }
+
+    function resetStep(fromStep) {
+        for (let i = fromStep; i <= 4; i++) {
+            document.getElementById(`step-${i}`).classList.add('hidden');
+            document.getElementById(`step-${i}-circle`).classList.replace('bg-blue-600', 'bg-gray-300');
+            document.getElementById(`step-${i}-text`).classList.replace('text-blue-600', 'text-gray-500');
+        }
+        selectedDate = null;
+        selectedTime = null;
+    }
+
+    async function confirmAppointment() {
+        const confirmBtn = document.getElementById('confirm-btn');
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Booking...';
+        
+        const payload = {
+            branchId: selectedBranch.id,
+            serviceType: selectedService,
+            appointmentDate: selectedDate,
+            timeSlot: selectedTime,
+            notes: '' // You can add a notes field in the HTML if needed
+        };
+        
+        try {
+            const response = await fetch(`${API_URL}/appointments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-auth-token': localStorage.getItem('token') },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Booking failed.');
+            
+            showToast('✅ Appointment booked successfully! Redirecting...');
+            sessionStorage.removeItem('selectedService'); 
+            setTimeout(() => { window.location.href = '../User/User-Dashboard.html'; }, 2000);
+        } catch (error) {
+            showToast(`❌ ${error.message}`, true);
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Book My Slot';
+        }
+    }
+</script>
+
 </body>
 </html>

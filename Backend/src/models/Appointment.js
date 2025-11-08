@@ -1,16 +1,4 @@
-// const { DataTypes } = require('sequelize');
-// const sequelize = require('../config/db');
-
-// const Appointment = sequelize.define('Appointment', {
-//   status: {
-//     type: DataTypes.STRING,
-//     defaultValue: 'pending'
-//   }
-// });
-
-// module.exports = Appointment;
-
-
+// Backend/src/models/Appointment.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
@@ -23,6 +11,7 @@ const Appointment = sequelize.define('Appointment', {
     type: DataTypes.INTEGER,
     allowNull: false
   },
+  // ✅ CORRECTED: Changed from serviceId to serviceType
   serviceType: {
     type: DataTypes.STRING,
     allowNull: false
@@ -37,7 +26,7 @@ const Appointment = sequelize.define('Appointment', {
   },
   status: {
     type: DataTypes.STRING,
-    defaultValue: 'pending'
+    defaultValue: 'pending' // 'pending', 'completed', 'cancelled'
   },
   queueNumber: {
     type: DataTypes.INTEGER,
