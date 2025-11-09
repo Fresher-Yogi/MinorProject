@@ -16,7 +16,6 @@
 </head>
 <body class="bg-gray-50">
 
-    <!-- Header -->
     <header class="bg-white shadow-md sticky top-0 z-50">
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             <a href="../index.html" class="text-3xl font-bold text-blue-600">QMS</a>
@@ -25,15 +24,13 @@
     </header>
 
     <main>
-        <!-- Hero Banner -->
         <section class="hero-banner text-white py-20 md:py-32">
             <div class="container mx-auto px-6 text-center">
                 <h1 class="text-4xl md:text-6xl font-extrabold mb-4">Hospital & Clinic Services</h1>
-                <p class="text-lg md:text-xl">Choose a department below to view available branches and book your appointment.</p>
+                <p class="text-lg md:text-xl">Choose a department below to view available hospital branches and book your appointment.</p>
             </div>
         </section>
 
-        <!-- Sub-Services Grid -->
         <section class="py-24">
             <div class="container mx-auto px-6">
                 <div class="text-center mb-16">
@@ -41,71 +38,58 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
                     
-                    <!-- Service Card 1: General Consultation -->
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-stethoscope fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">General Consultation</h3>
                         <p class="text-gray-600 mb-6">Routine check-ups and health assessments with our general physicians.</p>
-                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
-                        <button onclick="bookService('General Consultation')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
+                        <button onclick="bookService('General Consultation', 'Hospital')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
 
-                    <!-- Service Card 2: Cardiology -->
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-heartbeat fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Cardiology</h3>
                         <p class="text-gray-600 mb-6">Specialized care for heart conditions, including ECG and consultations.</p>
-                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
-                         <button onclick="bookService('Cardiology')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
+                        <button onclick="bookService('Cardiology', 'Hospital')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
 
-                    <!-- Service Card 3: Pediatrics -->
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-baby fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Pediatrics</h3>
                         <p class="text-gray-600 mb-6">Expert healthcare for infants, children, and adolescents.</p>
-                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
-                        <button onclick="bookService('Pediatrics')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
+                        <button onclick="bookService('Pediatrics', 'Hospital')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
 
-                    <!-- Service Card 4: Emergency Care -->
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-first-aid fa-3x text-red-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Emergency Care</h3>
                         <p class="text-gray-600 mb-6">Immediate attention for urgent medical conditions. Check-in online.</p>
-                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
-                        <button onclick="bookService('Emergency Care')" class="w-full block bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition duration-300">Check-in Now</button>
+                        <button onclick="bookService('Emergency Care', 'Hospital')" class="w-full block bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition duration-300">Check-in Now</button>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-  
-    <!-- // This script should be placed right before the </body> tag in all your service pages. -->
-<script>
-    function bookService(serviceName) {
-        // Step 1: ALWAYS store the user's intent first.
-        sessionStorage.setItem('selectedService', serviceName);
+    <script>
+        // ✅ UPDATED: Now includes category parameter
+        function bookService(serviceName, category) {
+            // Store the service and category
+            sessionStorage.setItem('selectedService', serviceName);
+            sessionStorage.setItem('selectedCategory', category);
 
-        // Step 2: Check if the user is logged in.
-        const token = localStorage.getItem('token');
-        const user = localStorage.getItem('user');
+            // Check if user is logged in
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
 
-        if (!token || !user) {
-            // If they are not logged in, alert them and redirect to the login page.
-            // The login page will now know what to do next because we saved the service name.
-            alert('Please login or register to continue booking.');
-            window.location.href = '../User/UserRegLogForm.html';
-            return; // Stop the function here.
+            if (!token || !user) {
+                alert('Please login or register to continue booking.');
+                window.location.href = '../User/UserRegLogForm.html';
+                return;
+            }
+
+            // Redirect to booking page
+            window.location.href = '../Branches/Select-Slot.html';
         }
-
-        // Step 3: If they are already logged in, proceed directly to the booking page.
-        window.location.href = '../Branches/Select-Slot.html';
-    }
-</script>
-
-
-
+    </script>
 </body>
 </html>

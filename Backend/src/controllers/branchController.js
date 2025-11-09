@@ -1,33 +1,45 @@
-// PASTE THIS ENTIRE CODE INTO: src/controllers/branchController.js
-
+// Backend/src/controllers/branchController.js - UPDATED
 const Branch = require('../models/Branch');
 const Appointment = require('../models/Appointment');
 const { Op } = require('sequelize');
 
-// --- ✅ THIS IS THE NEW FUNCTION THAT WAS MISSING ---
-// Get all branches (Public)
+// ✅ UPDATED: Get all branches with optional category filter
 exports.getAllBranches = async (req, res) => {
   try {
+    const { category } = req.query; // Get category from query params
+    
+    let whereClause = {};
+    if (category) {
+      whereClause.category = category;
+    }
+    
     const branches = await Branch.findAll({
-        order: [['name', 'ASC']] // Sort branches alphabetically
+      where: whereClause,
+      order: [['name', 'ASC']]
     });
+    
     res.json(branches);
   } catch (error) {
-    console.error("Error fetching all branches:", error.message);
+    console.error("Error fetching branches:", error.message);
     res.status(500).json({ message: 'Server Error' });
   }
 };
 
-// --- (The rest of the functions are for future use, but are correct) ---
-
-// Create a new branch (This is called by the Super Admin route)
+// Create a new branch (Super Admin only)
 exports.createBranch = async (req, res) => {
   try {
-    const { name, location } = req.body;
+    const { name, location, category } = req.body; // ✅ Added category
+    
     if (!name || !location) {
       return res.status(400).json({ message: 'Please provide name and location' });
     }
-    const branch = await Branch.create({ name, location });
+    
+    const branch = await Branch.create({ 
+      name, 
+      location, 
+      category: category || 'General' // ✅ Include category
+    });
+    
     res.status(201).json({ message: 'Branch created successfully', branch });
   } catch (error) {
     console.error("Error creating branch:", error.message);
@@ -49,7 +61,7 @@ exports.getBranchById = async (req, res) => {
   }
 };
 
-// Get available time slots for a specific branch and date.
+// Get available time slots for a specific branch and date
 exports.getAvailableSlots = async (req, res) => {
   try {
     const { id } = req.params;

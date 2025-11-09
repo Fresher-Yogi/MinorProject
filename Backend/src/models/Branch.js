@@ -1,4 +1,4 @@
-// --- FINAL UPDATED CODE for backend/src/models/Branch.js ---
+// Backend/src/models/Branch.js - UPDATED WITH CATEGORY
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
@@ -11,12 +11,18 @@ const Branch = sequelize.define('Branch', {
     type: DataTypes.STRING,
     allowNull: false
   },
-  // --- ✅ NEW FIELDS ADDED ---
+  // ✅ NEW FIELD: Category to identify what type of branch this is
+  category: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'General',
+    comment: 'e.g., Hospital, Bank, College, Service Center'
+  },
   adminId: {
     type: DataTypes.INTEGER,
-    allowNull: true, // Can be null initially
+    allowNull: true,
     references: {
-      model: 'users', // This links to the 'users' table
+      model: 'users',
       key: 'id'
     }
   },
@@ -29,7 +35,7 @@ const Branch = sequelize.define('Branch', {
     defaultValue: '17:00:00'
   },
   slotDuration: {
-    type: DataTypes.INTEGER, // Duration in minutes
+    type: DataTypes.INTEGER,
     defaultValue: 15
   }
 });

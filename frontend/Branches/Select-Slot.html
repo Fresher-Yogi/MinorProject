@@ -96,6 +96,7 @@
     const API_URL = 'http://localhost:5000/api';
     
     let selectedService = null;
+    let selectedCategory = null; // ✅ NEW
     let selectedBranch = null;
     let selectedDate = null;
     let selectedTime = null;
@@ -118,6 +119,7 @@
 
         // 2. Get the chosen service from the previous page
         selectedService = sessionStorage.getItem('selectedService');
+        selectedCategory = sessionStorage.getItem('selectedCategory'); // ✅ NEW
         if (!selectedService) {
             document.body.innerHTML = `<h1>Error: No service was selected. Please go back and choose a service.</h1>`;
             return;
@@ -138,6 +140,11 @@
     async function loadBranches() {
         const select = document.getElementById('branch-select');
         try {
+             let apiUrl = `${API_URL}/branches`;
+             if (selectedCategory) {
+                apiUrl += `?category=${encodeURIComponent(selectedCategory)}`;
+        }
+            
             const response = await fetch(`${API_URL}/branches`);
             if (!response.ok) throw new Error('Could not fetch branches from the server.');
             allBranches = await response.json();
