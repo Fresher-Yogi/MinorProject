@@ -1,20 +1,25 @@
+// PASTE THIS ENTIRE CODE INTO: src/controllers/branchController.js
+
 const Branch = require('../models/Branch');
 const Appointment = require('../models/Appointment');
 const { Op } = require('sequelize');
 
-// --- ✅ CORRECT ---
+// --- ✅ THIS IS THE NEW FUNCTION THAT WAS MISSING ---
 // Get all branches (Public)
 exports.getAllBranches = async (req, res) => {
   try {
-    const branches = await Branch.findAll();
+    const branches = await Branch.findAll({
+        order: [['name', 'ASC']] // Sort branches alphabetically
+    });
     res.json(branches);
   } catch (error) {
-    console.error(error.message);
+    console.error("Error fetching all branches:", error.message);
     res.status(500).json({ message: 'Server Error' });
   }
 };
 
-// --- ✅ CORRECT ---
+// --- (The rest of the functions are for future use, but are correct) ---
+
 // Create a new branch (This is called by the Super Admin route)
 exports.createBranch = async (req, res) => {
   try {
@@ -30,7 +35,6 @@ exports.createBranch = async (req, res) => {
   }
 };
 
-// --- ✅ CORRECT ---
 // Get branch by ID (Public)
 exports.getBranchById = async (req, res) => {
   try {
@@ -45,10 +49,7 @@ exports.getBranchById = async (req, res) => {
   }
 };
 
-
-// --- ✅ THIS IS THE CORRECT AND ROBUST FUNCTION FOR SLOTS ---
 // Get available time slots for a specific branch and date.
-// The logic here is sound and works correctly once it receives valid branch data.
 exports.getAvailableSlots = async (req, res) => {
   try {
     const { id } = req.params;
@@ -63,26 +64,21 @@ exports.getAvailableSlots = async (req, res) => {
       return res.status(404).json({ message: 'Branch not found.' });
     }
 
-    // --- 1. Fetch existing appointments for that day ---
     const existingAppointments = await Appointment.findAll({
       where: {
         branchId: id,
         appointmentDate: date,
-        status: { [Op.ne]: 'cancelled' } // Exclude cancelled appointments
+        status: { [Op.ne]: 'cancelled' }
       }
     });
     const bookedSlots = new Set(existingAppointments.map(apt => apt.timeSlot));
 
-    // --- 2. Generate all possible slots based on branch settings (WITH DEFAULTS) ---
-    // This correctly uses default values if the branch settings are null in the DB.
-    // The main issue was that the Branch Admin couldn't *save* new settings.
     const openingTime = branch.openingTime || '09:00:00';
     const closingTime = branch.closingTime || '17:00:00';
     const slotDuration = branch.slotDuration || 15;
     
     const allSlots = [];
     
-    // Helper function to convert HH:MM:SS to minutes from midnight
     const timeToMinutes = (time) => {
       if (typeof time !== 'string') return 0;
       const [hours, minutes] = time.split(':').map(Number);
@@ -92,21 +88,15 @@ exports.getAvailableSlots = async (req, res) => {
     const openingMinutes = timeToMinutes(openingTime);
     const closingMinutes = timeToMinutes(closingTime);
 
-    // This loop correctly generates all slots for the day
     for (let minutes = openingMinutes; minutes < closingMinutes; minutes += slotDuration) {
       const h = Math.floor(minutes / 60);
       const m = minutes % 60;
-      
       const formattedTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       allSlots.push(formattedTime);
     }
     
-    // --- 3. Filter out booked slots to find available ones ---
     const availableSlots = allSlots.filter(slot => !bookedSlots.has(slot));
-
-    res.json({
-        availableSlots
-    });
+    res.json({ availableSlots });
 
   } catch (error) {
     console.error("Error in getAvailableSlots:", error.message);

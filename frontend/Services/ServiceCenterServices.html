@@ -39,28 +39,24 @@
                         <i class="fas fa-tools fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Device Repair</h3>
                         <p class="text-gray-600 mb-6">Schedule a time to bring in your electronics or appliances for repair.</p>
-                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
                         <button onclick="bookService('Device Repair')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-headset fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Technical Support</h3>
                         <p class="text-gray-600 mb-6">Book a one-on-one session with a tech expert for troubleshooting.</p>
-                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
                         <button onclick="bookService('Technical Support')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-shield-alt fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Warranty Claims</h3>
                         <p class="text-gray-600 mb-6">Process warranty claims and product replacements with our team.</p>
-                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
                         <button onclick="bookService('Warranty Claims')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center">
                         <i class="fas fa-exchange-alt fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Returns & Exchanges</h3>
                         <p class="text-gray-600 mb-6">Skip the line for product returns or exchanges at our centers.</p>
-                        <!-- ✅ UPDATED: Changed <a> to <button> with onclick -->
                         <button onclick="bookService('Returns & Exchanges')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                 </div>
@@ -68,29 +64,18 @@
         </section>
     </main>
 
-   <!-- // This script should be placed right before the </body> tag in all your service pages. -->
-<script>
-    function bookService(serviceName) {
-        // Step 1: ALWAYS store the user's intent first.
-        sessionStorage.setItem('selectedService', serviceName);
-
-        // Step 2: Check if the user is logged in.
-        const token = localStorage.getItem('token');
-        const user = localStorage.getItem('user');
-
-        if (!token || !user) {
-            // If they are not logged in, alert them and redirect to the login page.
-            // The login page will now know what to do next because we saved the service name.
-            alert('Please login or register to continue booking.');
-            window.location.href = '../User/UserRegLogForm.html';
-            return; // Stop the function here.
+   <!-- This script enables the booking flow -->
+    <script>
+        function bookService(serviceName) {
+            sessionStorage.setItem('selectedService', serviceName);
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please login or register to continue booking.');
+                window.location.href = '../User/UserRegLogForm.html';
+            } else {
+                window.location.href = '../Branches/Select-Slot.html';
+            }
         }
-
-        // Step 3: If they are already logged in, proceed directly to the booking page.
-        window.location.href = '../Branches/Select-Slot.html';
-    }
-</script>
-
-
+    </script>
 </body>
 </html>

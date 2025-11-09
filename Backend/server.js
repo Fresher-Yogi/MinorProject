@@ -50,8 +50,9 @@ Branch.hasMany(Appointment, { foreignKey: 'branchId' });
 Appointment.belongsTo(Branch, { foreignKey: 'branchId' });
 
 // A User (if they are an admin) can be associated with one Branch.
+// A User (if they are an admin) can be associated with one Branch.
 User.hasOne(Branch, { foreignKey: 'adminId' });
-Branch.belongsTo(User, { as: 'admin', foreignKey: 'adminId' });
+Branch.belongsTo(User, { as: 'admin', foreignKey: 'adminId' }); // <-- CORRECTED
 
 
 // =================================================================

@@ -11,8 +11,7 @@ const Appointment = sequelize.define('Appointment', {
     type: DataTypes.INTEGER,
     allowNull: false
   },
-  // ✅ CORRECTED: Changed from serviceId to serviceType
-  serviceType: {
+  serviceType: {  // ✅ This is correct
     type: DataTypes.STRING,
     allowNull: false
   },
@@ -26,10 +25,14 @@ const Appointment = sequelize.define('Appointment', {
   },
   status: {
     type: DataTypes.STRING,
-    defaultValue: 'pending' // 'pending', 'completed', 'cancelled'
+    defaultValue: 'pending'
   },
   queueNumber: {
     type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  notes: {  // ✅ ADD THIS FIELD
+    type: DataTypes.TEXT,
     allowNull: true
   }
 });

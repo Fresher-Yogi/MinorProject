@@ -64,93 +64,107 @@
         </div>
     </main>
 
-    <script>
-        const API_URL = 'http://localhost:5000/api';
-        window.addEventListener('DOMContentLoaded', () => {
-            const token = localStorage.getItem('token');
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            if (!token || user.role !== 'superadmin') {
-                alert('Access Denied! Redirecting to login.');
-                window.location.href = 'superadmin_access.html';
-                return;
-            }
-            loadDashboardData();
-            updateLastUpdatedTime();
-        });
-        async function loadDashboardData() {
-            const token = localStorage.getItem('token');
-            try {
-                const [branchesRes, usersRes, pendingAdminsRes, appointmentsRes] = await Promise.all([
-                    fetch(`${API_URL}/branches`, { headers: { 'x-auth-token': token } }),
-                    fetch(`${API_URL}/users`, { headers: { 'x-auth-token': token } }),
-                    fetch(`${API_URL}/auth/admins/pending`, { headers: { 'x-auth-token': token } }),
-                    fetch(`${API_URL}/appointments`, { headers: { 'x-auth-token': token } })
-                ]);
-                if (!branchesRes.ok || !usersRes.ok || !pendingAdminsRes.ok) {
-                    throw new Error('Failed to fetch data.');
-                }
-                const branches = await branchesRes.json();
-                const users = await usersRes.json();
-                const pendingAdmins = await pendingAdminsRes.json();
-                const appointments = appointmentsRes.ok ? await appointmentsRes.json() : [];
-                displayStats({ branches, users, pendingAdmins, appointments });
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-                showError();
-            }
-        }
-        function displayStats(data) {
-            const { branches, users, pendingAdmins, appointments } = data;
-            document.getElementById('total-branches').textContent = branches.length;
-            document.getElementById('total-users').textContent = users.length;
-            document.getElementById('pending-approvals').textContent = pendingAdmins.length;
-            document.getElementById('total-appointments').textContent = appointments.length;
-            const approvedAdmins = users.filter(u => u.role === 'admin' && u.status === 'approved');
-            document.getElementById('approved-admins').textContent = approvedAdmins.length;
-            const completedAppts = appointments.filter(a => a.status === 'completed');
-            const pendingAppts = appointments.filter(a => a.status === 'pending');
-            document.getElementById('completed-appointments').textContent = completedAppts.length;
-            document.getElementById('pending-appointments').textContent = pendingAppts.length;
-            const badge = document.getElementById('pending-count-badge');
-            if (pendingAdmins.length > 0) {
-                badge.textContent = pendingAdmins.length;
-                badge.classList.remove('hidden');
-            }
-            displayRecentBranches(branches);
-            const activeBranches = branches.filter(b => b.adminId !== null);
-            const activePercent = branches.length > 0 ? Math.round((activeBranches.length / branches.length) * 100) : 0;
-            document.getElementById('active-branches-percent').textContent = `${activePercent}%`;
-            document.getElementById('active-branches-bar').style.width = `${activePercent}%`;
-        }
-        function displayRecentBranches(branches) {
-            const container = document.getElementById('recent-branches');
-            if (branches.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-4">No branches created yet.</p>';
-                return;
-            }
-            const recentBranches = branches.slice(-5).reverse();
-            container.innerHTML = recentBranches.map(branch => `<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"><div class="flex items-center space-x-3"><div class="bg-purple-100 text-purple-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-building"></i></div><div><p class="font-semibold text-gray-800">${branch.name}</p><p class="text-xs text-gray-500">${branch.location}</p></div></div><span class="text-xs ${branch.adminId ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'} px-2 py-1 rounded-full">${branch.adminId ? 'Assigned' : 'Unassigned'}</span></div>`).join('');
-        }
-        function showError() {
-            const errorElements = ['total-branches', 'total-users', 'pending-approvals', 'total-appointments', 'approved-admins', 'completed-appointments', 'pending-appointments'];
-            errorElements.forEach(id => { document.getElementById(id).innerHTML = '<span class="text-red-500 text-lg">Error</span>'; });
-            document.getElementById('recent-branches').innerHTML = '<div class="bg-red-100 text-red-700 p-4 rounded-lg">Failed to load data. Please refresh.</div>';
-        }
-        function updateLastUpdatedTime() {
-            const now = new Date();
-            document.getElementById('last-updated').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        }
-        
-        // ✅ UPDATED: Added confirmation dialog
-        function handleLogout() {
-            if (confirm('Are you sure you want to logout?')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = 'superadmin_access.html';
-            }
-        }
+<!-- ... (rest of your HTML file) ... -->
 
-        setInterval(() => { loadDashboardData(); updateLastUpdatedTime(); }, 30000);
-    </script>
+<script>
+    const API_URL = 'http://localhost:5000/api';
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!token || user.role !== 'superadmin') {
+            alert('Access Denied! Redirecting to login.');
+            window.location.href = 'superadmin_access.html';
+            return;
+        }
+        loadDashboardData();
+        updateLastUpdatedTime();
+    });
+
+    async function loadDashboardData() {
+        const token = localStorage.getItem('token');
+        try {
+            // ✅ CRITICAL FIX: The 'headers' object with the token is now added to every fetch call.
+            const [branchesRes, usersRes, pendingAdminsRes, appointmentsRes] = await Promise.all([
+                fetch(`${API_URL}/branches`, { headers: { 'x-auth-token': token } }),
+                fetch(`${API_URL}/users`, { headers: { 'x-auth-token': token } }),
+                fetch(`${API_URL}/auth/admins/pending`, { headers: { 'x-auth-token': token } }),
+                fetch(`${API_URL}/appointments`, { headers: { 'x-auth-token': token } })
+            ]);
+
+            if (!branchesRes.ok || !usersRes.ok || !pendingAdminsRes.ok) {
+                throw new Error('Failed to fetch data. Your session might be invalid.');
+            }
+            const branches = await branchesRes.json();
+            const users = await usersRes.json();
+            const pendingAdmins = await pendingAdminsRes.json();
+            const appointments = appointmentsRes.ok ? await appointmentsRes.json() : [];
+            
+            displayStats({ branches, users, pendingAdmins, appointments });
+
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            showError();
+        }
+    }
+    
+    // (No changes are needed in the functions below, they are correct)
+    function displayStats(data) {
+        const { branches, users, pendingAdmins, appointments } = data;
+        document.getElementById('total-branches').textContent = branches.length;
+        document.getElementById('total-users').textContent = users.length;
+        document.getElementById('pending-approvals').textContent = pendingAdmins.length;
+        document.getElementById('total-appointments').textContent = appointments.length;
+        const approvedAdmins = users.filter(u => u.role === 'admin' && u.status === 'approved');
+        document.getElementById('approved-admins').textContent = approvedAdmins.length;
+        const completedAppts = appointments.filter(a => a.status === 'completed');
+        const pendingAppts = appointments.filter(a => a.status === 'pending');
+        document.getElementById('completed-appointments').textContent = completedAppts.length;
+        document.getElementById('pending-appointments').textContent = pendingAppts.length;
+        const badge = document.getElementById('pending-count-badge');
+        if (pendingAdmins.length > 0) {
+            badge.textContent = pendingAdmins.length;
+            badge.classList.remove('hidden');
+        }
+        displayRecentBranches(branches);
+        const activeBranches = branches.filter(b => b.adminId !== null);
+        const activePercent = branches.length > 0 ? Math.round((activeBranches.length / branches.length) * 100) : 0;
+        document.getElementById('active-branches-percent').textContent = `${activePercent}%`;
+        document.getElementById('active-branches-bar').style.width = `${activePercent}%`;
+    }
+
+    function displayRecentBranches(branches) {
+        const container = document.getElementById('recent-branches');
+        if (branches.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-center py-4">No branches created yet.</p>';
+            return;
+        }
+        const recentBranches = branches.slice(-5).reverse();
+        container.innerHTML = recentBranches.map(branch => `<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"><div class="flex items-center space-x-3"><div class="bg-purple-100 text-purple-600 rounded-full h-10 w-10 flex items-center justify-center"><i class="fas fa-building"></i></div><div><p class="font-semibold text-gray-800">${branch.name}</p><p class="text-xs text-gray-500">${branch.location}</p></div></div><span class="text-xs ${branch.adminId ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'} px-2 py-1 rounded-full">${branch.adminId ? 'Assigned' : 'Unassigned'}</span></div>`).join('');
+    }
+
+    function showError() {
+        const errorElements = ['total-branches', 'total-users', 'pending-approvals', 'total-appointments', 'approved-admins', 'completed-appointments', 'pending-appointments'];
+        errorElements.forEach(id => { document.getElementById(id).innerHTML = '<span class="text-red-300 text-lg">Error</span>'; });
+        document.getElementById('recent-branches').innerHTML = '<div class="bg-red-100 text-red-700 p-4 rounded-lg">Failed to load data. Please refresh.</div>';
+    }
+
+    function updateLastUpdatedTime() {
+        const now = new Date();
+        document.getElementById('last-updated').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function handleLogout() {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'superadmin_access.html';
+        }
+    }
+
+    setInterval(() => { loadDashboardData(); updateLastUpdatedTime(); }, 30000);
+</script>
+
+
 </body>
 </html>
