@@ -44,27 +44,52 @@ router.post('/register', async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 });
-
-// @route   POST /api/auth/login
-// @desc    Login a NORMAL USER
-router.post('/login', async (req, res) => {
+// @route   POST /api/auth/register
+// @desc    Register a new NORMAL USER
+router.post('/register', async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const user = await User.findOne({ where: { email } });
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid credentials.' });
+        // --- DEBUGGING: Let's see what the frontend is sending us ---
+        console.log('--- /register endpoint has been hit ---');
+        console.log('Request Body Received:', req.body);
+        // ---------------------------------------------------------
+
+        const { name, email, password, phone } = req.body;
+        
+        if (!name || !email || !password || !phone) {
+            console.log('Validation failed: A required field is missing.'); // <-- DEBUGGING LINE
+            return res.status(400).json({ message: 'Please enter all fields, including phone number.' });
         }
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials.' });
+        
+        let user = await User.findOne({ where: { email } });
+        if (user) {
+            return res.status(400).json({ message: 'User with this email already exists.' });
         }
-        const token = jwt.sign({ user: { id: user.id } }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.json({ 
+        
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        
+        const newUser = await User.create({
+            name,
+            email,
+            password: hashedPassword,
+            phone,
+            role: 'user',
+            status: 'approved'
+        });
+        
+        console.log('User was created successfully in the database.'); // <-- DEBUGGING LINE
+        console.log(`Now attempting to send SMS to phone number: ${newUser.phone}`); // <-- DEBUGGING LINE
+
+        // Send the welcome SMS
+        sendSms(newUser.phone, `Welcome to the Queue Management System, ${newUser.name}!`);
+
+        const token = jwt.sign({ user: { id: newUser.id } }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        res.status(201).json({ 
             token, 
-            user: { id: user.id, name: user.name, email: user.email, role: user.role } 
+            user: { id: newUser.id, name: newUser.name, email: newUser.email, role: 'user' } 
         });
     } catch (error) {
-        console.error("User Login Error:", error.message);
+        console.error("User Register Error:", error.message);
         res.status(500).json({ message: 'Server Error' });
     }
 });

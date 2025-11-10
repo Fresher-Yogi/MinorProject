@@ -52,7 +52,6 @@
             </div>
         </div>
 
-        <!-- ✅ SIMPLIFIED: Step 1 now ONLY asks for the Branch -->
         <div id="step-1" class="bg-white rounded-xl shadow-lg p-8 mb-6">
             <h2 class="text-2xl font-bold text-gray-800 mb-4"><i class="fas fa-hospital mr-3 text-blue-600"></i>Step 1: Choose a Branch</h2>
             <div>
@@ -90,13 +89,12 @@
         </div>
     </main>
 
-<!-- ✅ THIS IS THE COMPLETE AND CORRECT SCRIPT FOR THIS PAGE -->
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 <script>
     const API_URL = 'http://localhost:5000/api';
     
     let selectedService = null;
-    let selectedCategory = null; // ✅ NEW
+    let selectedCategory = null; 
     let selectedBranch = null;
     let selectedDate = null;
     let selectedTime = null;
@@ -110,29 +108,24 @@
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
-        // 1. Authenticate User
         if (!localStorage.getItem('token')) {
             showToast('Please login first to book an appointment!', true);
             setTimeout(() => { window.location.href = '../User/UserRegLogForm.html'; }, 2000);
             return;
         }
 
-        // 2. Get the chosen service from the previous page
         selectedService = sessionStorage.getItem('selectedService');
-        selectedCategory = sessionStorage.getItem('selectedCategory'); // ✅ NEW
+        selectedCategory = sessionStorage.getItem('selectedCategory'); 
         if (!selectedService) {
             document.body.innerHTML = `<h1>Error: No service was selected. Please go back and choose a service.</h1>`;
             return;
         }
 
-        // 3. Update the UI
         document.getElementById('service-name-header').textContent = selectedService;
         document.getElementById('date-select').min = new Date().toISOString().split('T')[0];
 
-        // 4. Fetch the branch data
         await loadBranches();
 
-        // 5. Set up event listeners to move to the next step
         document.getElementById('branch-select').addEventListener('change', handleBranchChange);
         document.getElementById('date-select').addEventListener('change', handleDateChange);
     });
@@ -143,15 +136,16 @@
              let apiUrl = `${API_URL}/branches`;
              if (selectedCategory) {
                 apiUrl += `?category=${encodeURIComponent(selectedCategory)}`;
-        }
+             }
             
-            const response = await fetch(`${API_URL}/branches`);
+            // ✅ THE FIX IS HERE: We now use the 'apiUrl' variable which contains the filter
+            const response = await fetch(apiUrl);
             if (!response.ok) throw new Error('Could not fetch branches from the server.');
             allBranches = await response.json();
             
             if (allBranches.length === 0) {
-                 select.innerHTML = '<option value="">-- No branches are available --</option>';
-                 showToast('No branches have been created yet. Please contact an admin.', true);
+                 select.innerHTML = `<option value="">-- No branches are available for this category --</option>`;
+                 showToast('No branches found for this category. Please contact an admin.', true);
                  return;
             }
 
@@ -243,7 +237,7 @@
             serviceType: selectedService,
             appointmentDate: selectedDate,
             timeSlot: selectedTime,
-            notes: '' // You can add a notes field in the HTML if needed
+            notes: ''
         };
         
         try {
@@ -256,7 +250,8 @@
             if (!response.ok) throw new Error(data.message || 'Booking failed.');
             
             showToast('✅ Appointment booked successfully! Redirecting...');
-            sessionStorage.removeItem('selectedService'); 
+            sessionStorage.removeItem('selectedService');
+            sessionStorage.removeItem('selectedCategory'); 
             setTimeout(() => { window.location.href = '../User/User-Dashboard.html'; }, 2000);
         } catch (error) {
             showToast(`❌ ${error.message}`, true);

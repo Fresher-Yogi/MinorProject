@@ -39,35 +39,35 @@
                         <i class="fas fa-users-cog fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Account Services</h3>
                         <p class="text-gray-600 mb-6 flex-grow">Open new accounts, manage existing ones, or inquire about statements.</p>
-                        <button onclick="bookService('Account Services')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
+                        <button onclick="bookService('Account Services', 'Bank')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center flex flex-col">
                         <i class="fas fa-hand-holding-usd fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Loans & Mortgages</h3>
                         <p class="text-gray-600 mb-6 flex-grow">Consult with our specialists for personal, home, or business loans.</p>
-                        <button onclick="bookService('Loans & Mortgages')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
+                        <button onclick="bookService('Loans & Mortgages', 'Bank')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center flex flex-col">
                         <i class="fas fa-chart-line fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Wealth Management</h3>
                         <p class="text-gray-600 mb-6 flex-grow">Get expert advice on investments, retirement plans, and savings.</p>
-                        <button onclick="bookService('Wealth Management')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
+                        <button onclick="bookService('Wealth Management', 'Bank')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center flex flex-col">
                         <i class="fas fa-headset fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Customer Support</h3>
                         <p class="text-gray-600 mb-6 flex-grow">For general inquiries, card issues, and other support services.</p>
-                        <button onclick="bookService('Customer Support')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
+                        <button onclick="bookService('Customer Support', 'Bank')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- This script enables the booking flow -->
     <script>
-        function bookService(serviceName) {
+        function bookService(serviceName, category) {
             sessionStorage.setItem('selectedService', serviceName);
+            sessionStorage.setItem('selectedCategory', category);
             const token = localStorage.getItem('token');
             if (!token) {
                 alert('Please login or register to continue booking.');

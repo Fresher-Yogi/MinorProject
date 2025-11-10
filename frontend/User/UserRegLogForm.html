@@ -53,6 +53,7 @@
                     <form id="register-form-element" onsubmit="handleRegister(event)">
                         <div class="mb-5 input-group"><i class="fas fa-user input-icon"></i><input type="text" id="reg-name" placeholder="Full Name" class="form-input" required></div>
                         <div class="mb-5 input-group"><i class="fas fa-envelope input-icon"></i><input type="email" id="reg-email" placeholder="Email Address" class="form-input" required></div>
+                        <div class="mb-5 input-group"><i class="fas fa-phone input-icon"></i><input type="tel" id="reg-phone" placeholder="Phone Number (e.g., +919876543210)" class="form-input" required></div>
                         <div class="mb-5 input-group"><i class="fas fa-lock input-icon"></i><input type="password" id="reg-password" placeholder="Create Password" class="form-input" required></div>
                         <div class="mb-5 input-group"><i class="fas fa-lock input-icon"></i><input type="password" id="reg-confirm-password" placeholder="Confirm Password" class="form-input" required></div>
                         <button type="submit" id="register-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">Register</button>
@@ -100,6 +101,7 @@
             const name = document.getElementById('reg-name').value.trim();
             const email = document.getElementById('reg-email').value.trim();
             const password = document.getElementById('reg-password').value;
+            const phone = document.getElementById('reg-phone').value.trim();
             const confirmPassword = document.getElementById('reg-confirm-password').value;
             
             if (password !== confirmPassword) {
@@ -119,7 +121,7 @@
                 const response = await fetch(`${API_URL}/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, password })
+                    body: JSON.stringify({ name, email, password, phone})
                 });
                 const data = await response.json();
                 

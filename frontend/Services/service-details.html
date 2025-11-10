@@ -35,7 +35,7 @@
         <section class="py-24">
             <div class="container mx-auto px-6">
                 <div class="text-center mb-16">
-                    <h2 id="sub-service-title" class="text-4xl font-bold inline-block border-b-4 border-blue-500 pb-3">Available Departments</h2>
+                    <h2 id="sub-service-title" class="text-4xl font-bold inline-block border-b-4 border-blue-500 pb-3">Available Services</h2>
                 </div>
                 <div id="sub-services-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
                     <div class="col-span-full text-center py-8">
@@ -56,87 +56,63 @@
         async function loadServiceDetails() {
             const params = new URLSearchParams(window.location.search);
             const categoryId = params.get('id');
+            const subServicesGrid = document.getElementById('sub-services-grid');
 
             if (!categoryId) {
-                document.body.innerHTML = `
-                    <div class="min-h-screen flex items-center justify-center">
-                        <div class="text-center">
-                            <i class="fas fa-exclamation-triangle text-red-500 text-5xl mb-4"></i>
-                            <h1 class="text-2xl font-bold text-gray-800 mb-4">Error: No Category ID provided</h1>
-                            <a href="../index.html" class="text-blue-600 hover:underline">Go Back to Home</a>
-                        </div>
-                    </div>
-                `;
+                document.body.innerHTML = `<div class="text-center p-10"><h1 class="text-2xl text-red-600">Error: No Category ID provided.</h1><a href="../index.html" class="text-blue-600">Go Back</a></div>`;
                 return;
             }
 
             try {
+                // This backend route should exist in your categoryRoutes.js
                 const response = await fetch(`${API_URL}/categories/${categoryId}`);
                 if (!response.ok) throw new Error('Category not found');
-
                 const category = await response.json();
 
-                // Update page content
+                // Update page titles
                 document.title = `${category.name} Services - QMS`;
                 document.getElementById('category-title').textContent = `${category.name} Services`;
-                document.getElementById('category-description').textContent = category.description || 'Please select a service below to book your appointment.';
-                document.getElementById('sub-service-title').textContent = `Available ${category.name} Departments`;
+                document.getElementById('category-description').textContent = category.description || 'Please select a service to continue.';
+                document.getElementById('sub-service-title').textContent = `Available ${category.name} Services`;
+                
+                // Fetch services for this category
+                const servicesResponse = await fetch(`${API_URL}/services?categoryId=${categoryId}`);
+                if(!servicesResponse.ok) throw new Error('Could not fetch services for this category.');
+                const services = await servicesResponse.json();
 
-                const subServicesGrid = document.getElementById('sub-services-grid');
-
-                // Check if sub-services exist
-                if (!category.subServices || category.subServices.trim() === '') {
-                    subServicesGrid.innerHTML = `
-                        <div class="col-span-full text-center py-12">
-                            <i class="fas fa-info-circle text-gray-400 text-4xl mb-4"></i>
-                            <p class="text-gray-500 font-semibold">No specific services configured for this category yet.</p>
-                            <p class="text-gray-400 text-sm mt-2">Please contact the administrator.</p>
-                        </div>
-                    `;
+                if (services.length === 0) {
+                    subServicesGrid.innerHTML = `<p class="col-span-full text-center text-gray-500">No specific services have been added to this category yet.</p>`;
                     return;
                 }
-
-                // Split sub-services and render them
-                const subServices = category.subServices.split(',').map(s => s.trim()).filter(s => s);
                 
-                subServicesGrid.innerHTML = subServices.map(subService => `
+                // Dynamically render service cards
+                subServicesGrid.innerHTML = services.map(service => `
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center flex flex-col">
                         <i class="fas ${category.icon || 'fa-tag'} fa-3x text-blue-500 mb-5"></i>
-                        <h3 class="text-2xl font-bold mb-3 flex-grow">${subService}</h3>
-                        <button onclick="bookService('${subService.replace(/'/g, "\\'")}', '${category.name.replace(/'/g, "\\'")}', '${category.icon || 'fa-tag'}')" 
-                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">
-                            <i class="fas fa-calendar-plus mr-2"></i>Book Now
+                        <h3 class="text-2xl font-bold mb-3 flex-grow">${service.name}</h3>
+                        <p class="text-gray-500 mb-4">${service.description || ''}</p>
+                        <button onclick="bookService('${service.name.replace(/'/g, "\\'")}', '${category.name.replace(/'/g, "\\'")}')" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
+                            Book Now
                         </button>
                     </div>
                 `).join('');
 
             } catch (error) {
                 console.error("Failed to load category details:", error);
-                document.getElementById('sub-services-grid').innerHTML = `
-                    <div class="col-span-full bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                        <i class="fas fa-exclamation-triangle text-red-500 text-2xl mb-2"></i>
-                        <p class="text-red-700 font-semibold">${error.message}</p>
-                        <p class="text-red-600 text-sm mt-2">Please check if the backend server is running.</p>
-                    </div>
-                `;
+                subServicesGrid.innerHTML = `<p class="col-span-full text-center text-red-500">${error.message}</p>`;
             }
         }
 
-        function bookService(serviceName, categoryName, icon) {
-            // Check if user is logged in
+        function bookService(serviceName, categoryName) {
             const token = localStorage.getItem('token');
             if (!token) {
                 alert('Please login first to book an appointment!');
                 window.location.href = '../User/UserRegLogForm.html';
                 return;
             }
-
-            // Store the selected service information
             sessionStorage.setItem('selectedService', serviceName);
             sessionStorage.setItem('selectedCategory', categoryName);
-            sessionStorage.setItem('selectedIcon', icon);
-
-            // Redirect to branch and slot selection page
             window.location.href = '../Branches/Select-Slot.html';
         }
     </script>

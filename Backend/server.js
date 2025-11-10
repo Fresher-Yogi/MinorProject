@@ -2,6 +2,7 @@
 // This version reflects the new data model based on your SRS.
 
 require('dotenv').config({ path: './src/.env' });
+require('./src/utils/notificationService'); 
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");

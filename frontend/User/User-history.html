@@ -30,12 +30,10 @@
         </div>
     </main>
 
-    <!-- ✅ THIS IS THE COMPLETE AND CORRECT SCRIPT FOR THIS PAGE -->
     <script>
         const API_URL = 'http://localhost:5000/api';
         const TOKEN = localStorage.getItem('token');
 
-        // 1. When the page loads, check for login and fetch the user's history
         window.addEventListener('DOMContentLoaded', () => {
             if (!TOKEN) {
                 alert('Please login first to view your history!');
@@ -45,13 +43,12 @@
             fetchHistory();
         });
 
-        // 2. Function to get all appointments and branches
         async function fetchHistory() {
             const historyContainer = document.getElementById('history-container');
             try {
                 const [appointmentsRes, branchesRes] = await Promise.all([
                     fetch(`${API_URL}/appointments/my-appointments`, { headers: { 'x-auth-token': TOKEN } }),
-                    fetch(`${API_URL}/branches`) // No token needed for public branch info
+                    fetch(`${API_URL}/branches`) 
                 ]);
 
                 if (!appointmentsRes.ok || !branchesRes.ok) throw new Error('Failed to fetch data from the server.');
@@ -68,7 +65,6 @@
             }
         }
 
-        // 3. Function to display the appointments on the page
         function displayHistory(appointments, branchMap) {
             const historyContainer = document.getElementById('history-container');
             if (appointments.length === 0) {
@@ -80,7 +76,6 @@
 
             historyContainer.innerHTML = sortedAppointments.map(appointment => {
                 const branchName = branchMap.get(appointment.branchId) || 'Unknown Branch';
-                // Fix for date parsing to avoid timezone issues
                 const appointmentDate = new Date(appointment.appointmentDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
                 
                 let statusClass, statusText = appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1);
@@ -89,7 +84,6 @@
                 else if (appointment.status === 'cancelled') statusClass = 'bg-red-50 text-red-700 border-red-200';
                 else statusClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
 
-                // Only show the "Cancel" button if the appointment is still 'pending'
                 const cancelButton = appointment.status === 'pending'
                     ? `<button onclick="cancelAppointment(${appointment.id})" class="bg-red-100 hover:bg-red-200 text-red-700 font-semibold py-2 px-4 rounded-lg transition text-sm ml-4">Cancel</button>`
                     : '';
@@ -109,15 +103,17 @@
             }).join('');
         }
         
-        // 4. THIS IS THE CORRECT cancelAppointment FUNCTION
-        // It makes an API call and then reloads the history on the same page.
+        // ✅ --- THIS IS THE CORRECTED, ADDITIVE-FRIENDLY FUNCTION --- ✅
         async function cancelAppointment(appointmentId) {
             if (!confirm('Are you sure you want to cancel this appointment?')) return;
 
             try {
+                // This now calls the NEW dedicated /cancel route.
                 const response = await fetch(`${API_URL}/appointments/${appointmentId}/cancel`, {
                     method: 'PUT',
-                    headers: { 'x-auth-token': TOKEN }
+                    headers: { 
+                        'x-auth-token': TOKEN 
+                    }
                 });
 
                 const result = await response.json();
@@ -130,7 +126,6 @@
             }
         }
 
-        // 5. Standard logout function
         function handleLogout() {
             if (confirm('Are you sure you want to logout?')) {
                 localStorage.removeItem('token');
@@ -139,6 +134,5 @@
             }
         }
     </script>
-
 </body>
-</html>
+</html>```

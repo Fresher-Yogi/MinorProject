@@ -71,24 +71,16 @@
     </main>
 
     <script>
-        // ✅ UPDATED: Now includes category parameter
         function bookService(serviceName, category) {
-            // Store the service and category
             sessionStorage.setItem('selectedService', serviceName);
             sessionStorage.setItem('selectedCategory', category);
-
-            // Check if user is logged in
             const token = localStorage.getItem('token');
-            const user = localStorage.getItem('user');
-
-            if (!token || !user) {
+            if (!token) {
                 alert('Please login or register to continue booking.');
                 window.location.href = '../User/UserRegLogForm.html';
-                return;
+            } else {
+                window.location.href = '../Branches/Select-Slot.html';
             }
-
-            // Redirect to booking page
-            window.location.href = '../Branches/Select-Slot.html';
         }
     </script>
 </body>

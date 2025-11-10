@@ -39,35 +39,35 @@
                         <i class="fas fa-file-signature fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Admissions Office</h3>
                         <p class="text-gray-600 mb-6 flex-grow">For prospective students, application queries, and campus tours.</p>
-                        <button onclick="bookService('Admissions Office')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
+                        <button onclick="bookService('Admissions Office', 'College')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center flex flex-col">
                         <i class="fas fa-graduation-cap fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Registrar's Office</h3>
                         <p class="text-gray-600 mb-6 flex-grow">Manage course registration, academic records, and transcripts.</p>
-                        <button onclick="bookService('Registrar\'s Office')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
+                        <button onclick="bookService('Registrar\'s Office', 'College')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center flex flex-col">
                         <i class="fas fa-dollar-sign fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Financial Aid</h3>
                         <p class="text-gray-600 mb-6 flex-grow">Discuss scholarships, grants, and student loan options with a counselor.</p>
-                        <button onclick="bookService('Financial Aid')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
+                        <button onclick="bookService('Financial Aid', 'College')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                     <div class="service-card bg-white p-8 rounded-xl shadow-lg text-center flex flex-col">
                         <i class="fas fa-university fa-3x text-blue-500 mb-5"></i>
                         <h3 class="text-2xl font-bold mb-3">Student Affairs</h3>
                         <p class="text-gray-600 mb-6 flex-grow">For housing, counseling, and other student life-related services.</p>
-                        <button onclick="bookService('Student Affairs')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
+                        <button onclick="bookService('Student Affairs', 'College')" class="w-full block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-300">Book Now</button>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- This script enables the booking flow -->
     <script>
-        function bookService(serviceName) {
+        function bookService(serviceName, category) {
             sessionStorage.setItem('selectedService', serviceName);
+            sessionStorage.setItem('selectedCategory', category);
             const token = localStorage.getItem('token');
             if (!token) {
                 alert('Please login or register to continue booking.');

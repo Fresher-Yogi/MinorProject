@@ -37,7 +37,6 @@
                 </form>
             </div>
             
-            <!-- ✅ UPDATED: Added IDs to form and inputs, and an onsubmit handler -->
             <div class="bg-white p-6 rounded-2xl shadow-lg">
                 <h2 class="text-xl font-semibold mb-4">Change Password</h2>
                 <form id="password-form" onsubmit="handlePasswordChange(event)" class="space-y-4">
@@ -54,73 +53,135 @@
 
     <script>
         const API_URL = 'http://localhost:5000/api';
-
+        
         function showToast(message, isError = false) {
             Toastify({ text: message, duration: 3000, close: true, gravity: "top", position: "right", style: { background: isError ? "#ef4444" : "#22c55e" }, }).showToast();
         }
 
+        // ✅ --- START: ADDITIVE CODE TO FIX THE BUG --- ✅
+        const TOKEN = localStorage.getItem('token');
+
         window.addEventListener('DOMContentLoaded', () => {
+            if (!TOKEN) {
+                alert('You must be logged in to view your profile.');
+                window.location.href = 'UserRegLogForm.html';
+                return;
+            }
             loadUserProfile();
         });
 
-        async function loadUserProfile() { /* ... no changes ... */ }
-        async function handleProfileUpdate(event) { /* ... no changes ... */ }
-        
-        // --- ✅ NEW FUNCTION to handle password change ---
-        async function handlePasswordChange(event) {
-            event.preventDefault();
-
-            const saveBtn = document.getElementById('save-password-btn');
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'Updating...';
-
-            const currentPassword = document.getElementById('current-password').value;
-            const newPassword = document.getElementById('new-password').value;
-            const confirmNewPassword = document.getElementById('confirm-new-password').value;
-
-            if (newPassword !== confirmNewPassword) {
-                showToast('New passwords do not match!', true);
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'Update Password';
-                return;
+        // This function was MISSING. It fetches data and fills the form.
+        async function loadUserProfile() {
+            try {
+                const response = await fetch(`${API_URL}/users/me`, {
+                    headers: { 'x-auth-token': TOKEN }
+                });
+                if (!response.ok) throw new Error('Could not fetch your profile data.');
+                
+                const user = await response.json();
+                document.getElementById('profile-name').value = user.name;
+                document.getElementById('profile-email').value = user.email;
+                document.getElementById('profile-phone').value = user.phone || '';
+            } catch (error) {
+                showToast(error.message, true);
+                // In case of error, at least show the email from localStorage
+                const userFromStorage = JSON.parse(localStorage.getItem('user'));
+                if (userFromStorage) {
+                    document.getElementById('profile-email').value = userFromStorage.email;
+                }
             }
+        }
 
-            const token = localStorage.getItem('token');
+        // This function was MISSING. It handles the form submission to save data.
+        async function handleProfileUpdate(event) {
+            event.preventDefault();
+            const saveBtn = document.getElementById('save-profile-btn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            const payload = {
+                name: document.getElementById('profile-name').value,
+                phone: document.getElementById('profile-phone').value
+            };
 
             try {
-                const response = await fetch(`${API_URL}/users/me/change-password`, {
+                const response = await fetch(`${API_URL}/users/me`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-auth-token': token
+                        'x-auth-token': TOKEN
                     },
-                    body: JSON.stringify({ currentPassword, newPassword })
+                    body: JSON.stringify(payload)
                 });
-
                 const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.message);
-                }
-
-                showToast('✅ Password updated successfully!');
-                document.getElementById('password-form').reset(); // Clear the form fields
-
+                if (!response.ok) throw new Error(result.message);
+                showToast('✅ Profile updated successfully!');
             } catch (error) {
                 showToast(`❌ ${error.message}`, true);
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.textContent = 'Update Password';
+                saveBtn.textContent = 'Save Changes';
             }
+        }
+        // ✅ --- END: ADDITIVE CODE --- ✅
+
+        
+        // --- START: YOUR ORIGINAL, UNCHANGED CODE ---
+        async function handlePasswordChange(event) {
+          event.preventDefault();
+
+          const saveBtn = document.getElementById('save-password-btn');
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Updating...';
+
+          const currentPassword = document.getElementById('current-password').value;
+          const newPassword = document.getElementById('new-password').value;
+          const confirmNewPassword = document.getElementById('confirm-new-password').value;
+
+          if (newPassword !== confirmNewPassword) {
+              showToast('New passwords do not match!', true);
+              saveBtn.disabled = false;
+              saveBtn.textContent = 'Update Password';
+              return;
+          }
+
+          const token = localStorage.getItem('token');
+
+          try {
+              const response = await fetch(`${API_URL}/users/me/change-password`, {
+                  method: 'PUT',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'x-auth-token': token
+                  },
+                  body: JSON.stringify({ currentPassword, newPassword })
+              });
+
+              const result = await response.json();
+
+              if (!response.ok) {
+                  throw new Error(result.message);
+              }
+
+              showToast('✅ Password updated successfully!');
+              document.getElementById('password-form').reset();
+
+          } catch (error) {
+              showToast(`❌ ${error.message}`, true);
+          } finally {
+              saveBtn.disabled = false;
+              saveBtn.textContent = 'Update Password';
+          }
         }
         
         function handleLogout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = 'UserRegLogForm.html';
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'UserRegLogForm.html';
+            }
         }
+        // --- END: YOUR ORIGINAL, UNCHANGED CODE ---
     </script>
 </body>
-</html>```
-
----
+</html>

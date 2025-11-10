@@ -8,7 +8,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <style> body { font-family: 'Poppins', sans-serif; background-color: #f7fafc; } .sidebar-link-active { background-color: #2563eb; color: white; } </style>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+
+    <style> 
+        body { font-family: 'Poppins', sans-serif; background-color: #f7fafc; } 
+        .sidebar-link-active { background-color: #2563eb; color: white; } 
+        .modal-overlay { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
+        .highlight-turn { animation: pulse-border 2s infinite; background-color: #ebf5ff; }
+        @keyframes pulse-border {
+            0% { border-color: #3b82f6; }
+            50% { border-color: #93c5fd; }
+            100% { border-color: #3b82f6; }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 flex h-screen">
 
@@ -29,7 +43,6 @@
             <div class="mb-8"><h1 class="text-4xl font-bold text-gray-800">Welcome, <span id="user-name" class="text-blue-600"></span>!</h1><p class="text-gray-600 mt-2">Here's your queue and appointment overview</p></div>
             <div id="stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"></div>
             
-            <!-- ✅ This section is where upcoming appointments will be displayed -->
             <div id="appointments-section"></div>
 
             <div class="bg-white p-6 rounded-2xl shadow-lg mt-8">
@@ -44,58 +57,92 @@
         </div>
     </main>
 
+    <div id="ticket-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center modal-content transform scale-95">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Your Ticket</h2>
+                <button onclick="closeTicketModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times fa-lg"></i></button>
+            </div>
+            
+            <p class="text-gray-600 mb-4">Present this QR code at the branch to check in.</p>
+            <div id="qrcode-container" class="flex justify-center mb-6 p-4 border rounded-lg"></div>
+            <div class="text-left space-y-2">
+                <p><strong class="w-24 inline-block">Service:</strong> <span id="modal-service-name" class="font-semibold text-blue-600"></span></p>
+                <p><strong class="w-24 inline-block">Branch:</strong> <span id="modal-branch-name" class="font-semibold"></span></p>
+                <p><strong class="w-24 inline-block">Date:</strong> <span id="modal-date" class="font-semibold"></span></p>
+                <p><strong class="w-24 inline-block">Time:</strong> <span id="modal-time" class="font-semibold"></span></p>
+                <p><strong class="w-24 inline-block">Queue No:</strong> <span id="modal-queue" class="font-bold text-xl text-red-600"></span></p>
+            </div>
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
     <script>
         const API_URL = 'http://localhost:5000';
         const socket = io(API_URL);
+        // ✅ --- CHANGE 1: ADDITIVE CODE --- ✅
+        let userAppointments = []; // Global variable to hold user's appointments
 
-        // ✅ --- UPGRADED SOCKET.IO LISTENER --- ✅
         socket.on('connect', () => console.log('✅ Connected to Socket.IO server!'));
+        
+        // This is your original 'appointmentUpdated' listener
         socket.on('appointmentUpdated', (updatedAppointment) => {
             const currentUser = JSON.parse(localStorage.getItem('user'));
-            // Only react if the update is for the current user
             if (currentUser && currentUser.id === updatedAppointment.userId) {
                 console.log('Real-time update received for my appointment!', updatedAppointment);
-                
-                // Find the specific appointment card on the page
-                const appointmentCard = document.getElementById(`appointment-card-${updatedAppointment.id}`);
-                const statusBadge = document.getElementById(`status-badge-${updatedAppointment.id}`);
-
-                if (appointmentCard && statusBadge) {
-                    // Update status text and color
-                    const newStatus = updatedAppointment.status;
-                    let statusText = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
-                    let newClass = '';
-                    
-                    if (newStatus === 'completed') {
-                        newClass = 'bg-green-100 text-green-700';
-                    } else if (newStatus === 'cancelled') {
-                        newClass = 'bg-red-100 text-red-700';
-                    } else { // pending
-                        newClass = 'bg-yellow-100 text-yellow-700';
-                    }
-                    
-                    statusBadge.textContent = statusText;
-                    statusBadge.className = `px-3 py-1 rounded-full text-xs font-semibold ${newClass}`;
-                    
-                    // Optional: Play a sound or show a subtle notification
-                    alert(`Your appointment for ${updatedAppointment.serviceType} has been updated to: ${statusText}`);
-                }
+                fetchAndDisplayData(); 
+                alert(`Your appointment status has been updated to: ${updatedAppointment.status.toUpperCase()}`);
             }
         });
 
+        // This is your original 'queueUpdate' listener for "Your Turn"
+        socket.on('queueUpdate', (data) => {
+             const currentUser = JSON.parse(localStorage.getItem('user'));
+             if (currentUser && data.nextAppointment && currentUser.id === data.nextAppointment.userId) {
+                 alert("IT'S YOUR TURN NEXT!\n\nPlease proceed to the service counter.");
+                 const myAppointmentCard = document.getElementById(`appointment-card-${data.nextAppointment.id}`);
+                 if (myAppointmentCard) {
+                     myAppointmentCard.style.backgroundColor = '#dbeafe';
+                     myAppointmentCard.style.border = '2px solid #2563eb';
+                 }
+             }
+        });
+
+        // ✅ --- CHANGE 2: ADDITIVE CODE FOR CANCELLATION NOTIFICATIONS --- ✅
+        socket.on('queueModified', (data) => {
+            console.log('Queue modification signal received:', data);
+            const currentUser = JSON.parse(localStorage.getItem('user'));
+            if (!currentUser) return;
+
+            // Check if the current user has a pending appointment in the affected queue
+            const isUserAffected = userAppointments.some(apt => 
+                apt.status === 'pending' &&
+                apt.userId === currentUser.id &&
+                apt.branchId === data.branchId &&
+                apt.appointmentDate === data.appointmentDate &&
+                apt.serviceType === data.serviceType
+            );
+
+            if (isUserAffected) {
+                showToast("Queue Update: A slot has opened up ahead of you. The list is refreshing.");
+                fetchAndDisplayData();
+            }
+        });
+
+        // This is your original 'DOMContentLoaded' listener
         window.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
             const user = JSON.parse(localStorage.getItem('user'));
-
             if (!token || !user) {
                 window.location.href = 'UserRegLogForm.html';
                 return;
             }
-
             document.getElementById('user-name').textContent = user.name;
             fetchAndDisplayData();
         });
         
+        // This is your original 'fetchAndDisplayData' function
         async function fetchAndDisplayData() {
             const token = localStorage.getItem('token');
             try {
@@ -107,15 +154,17 @@
                 const branches = await branchesRes.json();
                 const branchMap = new Map(branches.map(b => [b.id, b]));
                 
+                // ✅ --- CHANGE 3: ADDITIVE CODE --- ✅
+                userAppointments = appointments; // Populate the global variable
+                
                 displayDynamicData(appointments, branchMap);
-
             } catch (error) {
                 console.error("Failed to fetch dashboard data:", error);
             }
         }
         
+        // This is your original 'displayDynamicData' function
         function displayDynamicData(appointments, branchMap) {
-            // Stats Cards
             const pendingCount = appointments.filter(a => a.status === 'pending').length;
             const completedCount = appointments.filter(a => a.status === 'completed').length;
             const statsContainer = document.getElementById('stats-cards');
@@ -124,20 +173,11 @@
                 <div class="bg-yellow-100 p-5 rounded-lg"><h3 class="font-bold text-2xl text-yellow-800">${pendingCount}</h3><p class="text-yellow-600">Pending</p></div>
                 <div class="bg-green-100 p-5 rounded-lg"><h3 class="font-bold text-2xl text-green-800">${completedCount}</h3><p class="text-green-600">Completed</p></div>
             `;
-            
-            // Upcoming Appointments Section
             const appointmentsSection = document.getElementById('appointments-section');
-            const upcomingAppointments = appointments
-                .filter(a => a.status === 'pending')
-                .sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate));
+            const upcomingAppointments = appointments.filter(a => a.status === 'pending').sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate));
 
             if (upcomingAppointments.length === 0) {
-                appointmentsSection.innerHTML = `
-                    <div class="bg-white p-6 rounded-2xl shadow-lg">
-                        <h2 class="font-bold text-2xl mb-4 text-gray-800"><i class="fas fa-calendar-day text-blue-600 mr-3"></i>Upcoming Appointments</h2>
-                        <p class="text-gray-500 text-center py-4">You have no upcoming appointments.</p>
-                    </div>
-                `;
+                appointmentsSection.innerHTML = `<div class="bg-white p-6 rounded-2xl shadow-lg"><h2 class="font-bold text-2xl mb-4 text-gray-800"><i class="fas fa-calendar-day text-blue-600 mr-3"></i>Upcoming Appointments</h2><p class="text-gray-500 text-center py-4">You have no upcoming appointments.</p></div>`;
                 return;
             }
 
@@ -148,22 +188,37 @@
                         ${upcomingAppointments.map(apt => {
                             const branch = branchMap.get(apt.branchId);
                             const date = new Date(apt.appointmentDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-                            return `
-                                <div id="appointment-card-${apt.id}" class="p-4 border rounded-lg flex justify-between items-center">
-                                    <div>
-                                        <p class="font-bold text-lg">${apt.serviceType}</p>
-                                        <p class="text-sm text-gray-600">${branch.name} | ${date} at ${apt.timeSlot}</p>
-                                        <p class="text-xs text-gray-400">Queue #${apt.queueNumber}</p>
-                                    </div>
-                                    <span id="status-badge-${apt.id}" class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">Pending</span>
-                                </div>
-                            `;
+                            return `<div id="appointment-card-${apt.id}" class="p-4 border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center"><div><p class="font-bold text-lg">${apt.serviceType}</p><p class="text-sm text-gray-600">${branch.name} | ${date} at ${apt.timeSlot}</p><p class="text-xs text-gray-400">Queue #${apt.queueNumber}</p></div><div class="flex items-center gap-4 mt-3 sm:mt-0"><span id="status-badge-${apt.id}" class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">Pending</span><button onclick='openTicketModal(${JSON.stringify(apt)}, ${JSON.stringify(branch)})' class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition text-sm"><i class="fas fa-qrcode mr-2"></i>View Ticket</button></div></div>`;
                         }).join('')}
                     </div>
-                </div>
-            `;
+                </div>`;
         }
+
+        // This is your original 'openTicketModal' function
+        function openTicketModal(appointment, branch) {
+            const modal = document.getElementById('ticket-modal');
+            const qrContainer = document.getElementById('qrcode-container');
+            document.getElementById('modal-service-name').textContent = appointment.serviceType;
+            document.getElementById('modal-branch-name').textContent = branch.name;
+            document.getElementById('modal-date').textContent = new Date(appointment.appointmentDate + 'T00:00:00').toLocaleDateString('en-US', { dateStyle: 'long' });
+            document.getElementById('modal-time').textContent = appointment.timeSlot;
+            document.getElementById('modal-queue').textContent = `#${appointment.queueNumber}`;
+            qrContainer.innerHTML = "";
+            const qrData = JSON.stringify({ appointmentId: appointment.id, userId: appointment.userId, branchId: appointment.branchId, date: appointment.appointmentDate, time: appointment.timeSlot, queue: appointment.queueNumber });
+            new QRCode(qrContainer, { text: qrData, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.H });
+            modal.classList.remove('hidden');
+        }
+
+        // This is your original 'closeTicketModal' function
+        function closeTicketModal() {
+            const modal = document.getElementById('ticket-modal');
+            modal.classList.add('hidden');
+        }
+
+        // This is your original 'showToast' function
+        function showToast(message, isError=false){ Toastify({ text: message, duration: 3500, style: { background: isError ? "#ef4444" : "#22c55e" }, }).showToast(); }
         
+        // This is your original 'handleLogout' function
         function handleLogout() {
             if (confirm('Are you sure you want to logout?')) {
                 localStorage.removeItem('token');
