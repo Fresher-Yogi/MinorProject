@@ -1,9 +1,10 @@
-// --- FINAL, COMPLETE, AND CORRECTED CODE for backend/src/routes/authRoutes.js ---
+// --- FINAL, COMPLETE CODE for backend/src/routes/authRoutes.js WITH PASSWORD RESET ---
 
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/user');
 const authMiddleware = require('../middleware/authMiddleware');
 const { sendSms, sendEmail } = require('../utils/notificationService'); 
@@ -11,55 +12,11 @@ const { sendSms, sendEmail } = require('../utils/notificationService');
 // Utility to generate a 6-digit OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
+// Utility to generate a secure reset token
+const generateResetToken = () => crypto.randomBytes(32).toString('hex');
 
 // ============================================
-// ❌ OLD SIMPLE REGISTRATION (COMMENTED OUT)
-// ============================================
-
-/*
-// @route   POST /api/auth/register
-// @desc    OLD: Register a new NORMAL USER (Simple, no OTP)
-router.post('/register', async (req, res) => {
-    try {
-        const { name, email, password, phone } = req.body;
-        if (!name || !email || !password || !phone) {
-            return res.status(400).json({ message: 'Please enter all fields, including phone number.' });
-        }
-        let user = await User.findOne({ where: { email } });
-        if (user) {
-            return res.status(400).json({ message: 'User with this email already exists.' });
-        }
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        
-        const newUser = await User.create({
-            name,
-            email,
-            password: hashedPassword,
-            phone,
-            role: 'user',
-            status: 'approved'
-        });
-        
-        // --- EMAIL NOTIFICATION LOGIC ---
-        const subject = "Welcome to QMS! Account Created Successfully";
-        const emailBody = '...'; // Simplified body for space
-        sendEmail(newUser.email, subject, `Welcome to QMS, ${newUser.name}! Your account is ready.`, emailBody);
-        
-        // --- SMS LOGIC ---
-        sendSms(newUser.phone, `Welcome to QMS, ${newUser.name}! Your account is ready. Check your email for details.`);
-
-        const token = jwt.sign({ user: { id: newUser.id } }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.status(201).json({ token, user: { id: newUser.id, name: newUser.name, email: newUser.email, role: 'user' } });
-    } catch (error) {
-        console.error("User Register Error:", error.message);
-        res.status(500).json({ message: 'Server Error' });
-    }
-});
-*/
-
-// ============================================
-// ✅ NEW OTP REGISTRATION (WORKING CODE)
+// ✅ USER REGISTRATION WITH OTP
 // ============================================
 
 // @route   POST /api/auth/register
@@ -84,7 +41,6 @@ router.post('/register', async (req, res) => {
 
         let newUser;
         if (user && !user.isVerified) {
-            // Re-use existing unverified user account
             await user.update({
                 name, 
                 password: hashedPassword, 
@@ -95,7 +51,6 @@ router.post('/register', async (req, res) => {
             });
             newUser = user;
         } else {
-            // Create a brand new user
             newUser = await User.create({
                 name,
                 email,
@@ -105,11 +60,10 @@ router.post('/register', async (req, res) => {
                 status: 'approved',
                 otp: otpCode,
                 otpExpires: otpExpiry,
-                isVerified: false // User is NOT verified yet
+                isVerified: false
             });
         }
         
-        // --- EMAIL OTP NOTIFICATION LOGIC ---
         const subject = "QMS: Your Email Verification Code (OTP)";
         const emailBody = `
             <h2>Queue Management System Verification</h2>
@@ -126,7 +80,6 @@ router.post('/register', async (req, res) => {
             emailBody
         );
         
-        // --- SMS LOGIC (Now Secondary/Mocked) ---
         sendSms(newUser.phone, `QMS OTP: ${otpCode} (Expires in 10 min)`);
 
         res.status(200).json({ 
@@ -138,7 +91,6 @@ router.post('/register', async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 });
-
 
 // @route   POST /api/auth/verify-otp
 // @desc    Step 2: Verify the OTP and finalize registration
@@ -152,26 +104,21 @@ router.post('/verify-otp', async (req, res) => {
             return res.status(404).json({ message: 'User not found or already verified.' });
         }
 
-        // Check for OTP expiration
         if (new Date() > user.otpExpires) {
-            // Reset OTP fields on expiry
             await user.update({ otp: null, otpExpires: null }); 
             return res.status(400).json({ message: 'OTP has expired. Please re-register to receive a new code.' });
         }
 
-        // Check for OTP match
         if (user.otp !== otp) {
             return res.status(400).json({ message: 'Invalid OTP provided.' });
         }
 
-        // OTP is valid and not expired: Verify the user
         await user.update({
             isVerified: true,
             otp: null,
             otpExpires: null
         });
 
-        // Generate final JWT token
         const token = jwt.sign({ user: { id: user.id } }, process.env.JWT_SECRET, { expiresIn: '7d' });
         
         res.status(200).json({ 
@@ -186,9 +133,12 @@ router.post('/verify-otp', async (req, res) => {
     }
 });
 
+// ============================================
+// ✅ USER LOGIN
+// ============================================
 
 // @route   POST /api/auth/login
-// @desc    Login User - Now checks for verification status
+// @desc    Login User - Checks for verification status
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -198,7 +148,6 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials.' });
         }
         
-        // ✅ NEW CHECK: Only verified users can log in
         if (!user.isVerified) {
              return res.status(403).json({ 
                  message: 'Account not verified. Please check your email for the verification code or re-register.' 
@@ -221,9 +170,151 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// ============================================
+// ✅ FORGOT PASSWORD - USER
+// ============================================
+
+// @route   POST /api/auth/forgot-password
+// @desc    Send password reset link to user email
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required.' });
+        }
+
+        const user = await User.findOne({ where: { email, role: 'user' } });
+
+        if (!user) {
+            // Security: Don't reveal if email exists or not
+            return res.status(200).json({ 
+                message: 'If an account exists with this email, you will receive a password reset link.' 
+            });
+        }
+
+        // Generate reset token
+        const resetToken = generateResetToken();
+        const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // Token expires in 30 minutes
+
+        // Store hashed token and expiry in database
+        await user.update({
+            resetToken: resetTokenHash,
+            resetTokenExpires: resetTokenExpiry
+        });
+
+        // Create reset link (adjust URL based on your frontend deployment)
+        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/User/reset-password.html?token=${resetToken}&email=${email}`;
+
+        // Send email with reset link
+        const subject = "Password Reset Request - QMS";
+        const emailBody = `
+            <h2>Password Reset Request</h2>
+            <p>Dear ${user.name},</p>
+            <p>We received a request to reset your password. Click the link below to proceed:</p>
+            <p><a href="${resetLink}" style="background-color: #3b82f6; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; display: inline-block;">Reset Password</a></p>
+            <p>Or copy this link: ${resetLink}</p>
+            <p><strong>This link will expire in 30 minutes.</strong></p>
+            <p>If you did not request this, please ignore this email.</p>
+            <p>Best regards,<br>QMS Team</p>
+        `;
+
+        sendEmail(
+            user.email,
+            subject,
+            `Password Reset Link - QMS`,
+            emailBody
+        );
+
+        res.status(200).json({ 
+            message: 'If an account exists with this email, you will receive a password reset link.' 
+        });
+
+    } catch (error) {
+        console.error("Forgot Password Error:", error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Verify token and reset password
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { email, token, newPassword, confirmPassword } = req.body;
+
+        if (!email || !token || !newPassword || !confirmPassword) {
+            return res.status(400).json({ message: 'All fields are required.' });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ message: 'Passwords do not match.' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+        }
+
+        // Hash the provided token to compare with stored hash
+        const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+        const user = await User.findOne({ where: { email, role: 'user' } });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid email or user not found.' });
+        }
+
+        // Check if token matches and hasn't expired
+        if (user.resetToken !== resetTokenHash) {
+            return res.status(400).json({ message: 'Invalid reset token.' });
+        }
+
+        if (!user.resetTokenExpires || new Date() > user.resetTokenExpires) {
+            await user.update({ resetToken: null, resetTokenExpires: null });
+            return res.status(400).json({ message: 'Reset token has expired. Please request a new one.' });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update password and clear reset token
+        await user.update({
+            password: hashedPassword,
+            resetToken: null,
+            resetTokenExpires: null
+        });
+
+        // Send confirmation email
+        const subject = "Password Reset Successful - QMS";
+        const emailBody = `
+            <h2>Password Reset Successful</h2>
+            <p>Dear ${user.name},</p>
+            <p>Your password has been successfully reset.</p>
+            <p>You can now log in with your new password.</p>
+            <p>If you did not reset your password, please contact support immediately.</p>
+            <p>Best regards,<br>QMS Team</p>
+        `;
+
+        sendEmail(
+            user.email,
+            subject,
+            `Password Reset Successful`,
+            emailBody
+        );
+
+        res.status(200).json({ 
+            message: '✅ Password has been reset successfully. You can now login with your new password.' 
+        });
+
+    } catch (error) {
+        console.error("Reset Password Error:", error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
 
 // ============================================
-// ✅ ADMIN & SUPER ADMIN ROUTES
+// ✅ ADMIN & SUPER ADMIN REGISTRATION
 // ============================================
 
 // @route   POST /api/auth/admin-register
@@ -246,10 +337,9 @@ router.post('/admin-register', async (req, res) => {
             email,
             password: hashedPassword,
             role: 'admin',
-            status: 'pending_approval' // New admins are pending
+            status: 'pending_approval'
         });
         
-        // --- EMAIL NOTIFICATION for PENDING ADMIN ---
         const subject = "Admin Account Pending Approval";
         const emailBody = `
             <h2>Thank You for Registering, ${newUser.name}!</h2>
@@ -262,7 +352,6 @@ router.post('/admin-register', async (req, res) => {
             `Admin Account Pending Approval for ${newUser.email}`, 
             emailBody
         );
-        // --- END EMAIL NOTIFICATION ---
 
         res.status(201).json({ message: 'Admin registration successful! Your account is pending approval.' });
     } catch (error) {
@@ -270,6 +359,10 @@ router.post('/admin-register', async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 });
+
+// ============================================
+// ✅ ADMIN & SUPER ADMIN LOGIN
+// ============================================
 
 // @route   POST /api/auth/admin-login
 // @desc    Login for ADMIN and SUPERADMIN users
@@ -303,6 +396,275 @@ router.post('/admin-login', async (req, res) => {
     }
 });
 
+// ============================================
+// ✅ ADMIN FORGOT PASSWORD
+// ============================================
+
+// @route   POST /api/auth/admin-forgot-password
+// @desc    Send password reset link to admin email
+router.post('/admin-forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required.' });
+        }
+
+        const user = await User.findOne({ where: { email, role: 'admin' } });
+
+        if (!user) {
+            return res.status(200).json({ 
+                message: 'If an admin account exists with this email, you will receive a password reset link.' 
+            });
+        }
+
+        const resetToken = generateResetToken();
+        const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000);
+
+        await user.update({
+            resetToken: resetTokenHash,
+            resetTokenExpires: resetTokenExpiry
+        });
+
+        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/Admin/reset-password.html?token=${resetToken}&email=${email}`;
+
+        const subject = "Password Reset Request - QMS Admin Portal";
+        const emailBody = `
+            <h2>Password Reset Request</h2>
+            <p>Dear ${user.name},</p>
+            <p>We received a request to reset your admin password. Click the link below to proceed:</p>
+            <p><a href="${resetLink}" style="background-color: #16a34a; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; display: inline-block;">Reset Password</a></p>
+            <p>Or copy this link: ${resetLink}</p>
+            <p><strong>This link will expire in 30 minutes.</strong></p>
+            <p>If you did not request this, please ignore this email and contact your Super Admin.</p>
+            <p>Best regards,<br>QMS Admin Team</p>
+        `;
+
+        sendEmail(
+            user.email,
+            subject,
+            `Admin Password Reset Link - QMS`,
+            emailBody
+        );
+
+        res.status(200).json({ 
+            message: 'If an admin account exists with this email, you will receive a password reset link.' 
+        });
+
+    } catch (error) {
+        console.error("Admin Forgot Password Error:", error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @route   POST /api/auth/admin-reset-password
+// @desc    Verify token and reset admin password
+router.post('/admin-reset-password', async (req, res) => {
+    try {
+        const { email, token, newPassword, confirmPassword } = req.body;
+
+        if (!email || !token || !newPassword || !confirmPassword) {
+            return res.status(400).json({ message: 'All fields are required.' });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ message: 'Passwords do not match.' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+        }
+
+        const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+        const user = await User.findOne({ where: { email, role: 'admin' } });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid email or admin not found.' });
+        }
+
+        if (user.resetToken !== resetTokenHash) {
+            return res.status(400).json({ message: 'Invalid reset token.' });
+        }
+
+        if (!user.resetTokenExpires || new Date() > user.resetTokenExpires) {
+            await user.update({ resetToken: null, resetTokenExpires: null });
+            return res.status(400).json({ message: 'Reset token has expired. Please request a new one.' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        await user.update({
+            password: hashedPassword,
+            resetToken: null,
+            resetTokenExpires: null
+        });
+
+        const subject = "Admin Password Reset Successful - QMS";
+        const emailBody = `
+            <h2>Password Reset Successful</h2>
+            <p>Dear ${user.name},</p>
+            <p>Your admin password has been successfully reset.</p>
+            <p>You can now log in to the admin portal with your new password.</p>
+            <p>If you did not reset your password, please contact your Super Admin immediately.</p>
+            <p>Best regards,<br>QMS Admin Team</p>
+        `;
+
+        sendEmail(
+            user.email,
+            subject,
+            `Admin Password Reset Successful`,
+            emailBody
+        );
+
+        res.status(200).json({ 
+            message: '✅ Password has been reset successfully. You can now login with your new password.' 
+        });
+
+    } catch (error) {
+        console.error("Admin Reset Password Error:", error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// ============================================
+// ✅ SUPER ADMIN FORGOT PASSWORD
+// ============================================
+
+// @route   POST /api/auth/superadmin-forgot-password
+// @desc    Send password reset link to super admin email
+router.post('/superadmin-forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required.' });
+        }
+
+        const user = await User.findOne({ where: { email, role: 'superadmin' } });
+
+        if (!user) {
+            return res.status(200).json({ 
+                message: 'If a Super Admin account exists with this email, you will receive a password reset link.' 
+            });
+        }
+
+        const resetToken = generateResetToken();
+        const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000);
+
+        await user.update({
+            resetToken: resetTokenHash,
+            resetTokenExpires: resetTokenExpiry
+        });
+
+        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/SuperAdmin/reset-password.html?token=${resetToken}&email=${email}`;
+
+        const subject = "⚠️ Password Reset Request - QMS Super Admin Portal";
+        const emailBody = `
+            <h2>🔐 Critical: Password Reset Request</h2>
+            <p>Dear ${user.name},</p>
+            <p>We received a request to reset your Super Admin password. Click the link below to proceed:</p>
+            <p><a href="${resetLink}" style="background-color: #7c3aed; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; display: inline-block;">Reset Super Admin Password</a></p>
+            <p>Or copy this link: ${resetLink}</p>
+            <p><strong style="color: red;">⚠️ This link will expire in 30 minutes.</strong></p>
+            <p><strong style="color: red;">⚠️ CRITICAL: This account has system-wide access. If you did not request this, take immediate action.</strong></p>
+            <p>Best regards,<br>QMS Security Team</p>
+        `;
+
+        sendEmail(
+            user.email,
+            subject,
+            `🔐 Super Admin Password Reset Link - QMS`,
+            emailBody
+        );
+
+        res.status(200).json({ 
+            message: 'If a Super Admin account exists with this email, you will receive a password reset link.' 
+        });
+
+    } catch (error) {
+        console.error("Super Admin Forgot Password Error:", error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @route   POST /api/auth/superadmin-reset-password
+// @desc    Verify token and reset super admin password
+router.post('/superadmin-reset-password', async (req, res) => {
+    try {
+        const { email, token, newPassword, confirmPassword } = req.body;
+
+        if (!email || !token || !newPassword || !confirmPassword) {
+            return res.status(400).json({ message: 'All fields are required.' });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ message: 'Passwords do not match.' });
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({ message: 'Super Admin password must be at least 8 characters for security.' });
+        }
+
+        const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+        const user = await User.findOne({ where: { email, role: 'superadmin' } });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid email or Super Admin not found.' });
+        }
+
+        if (user.resetToken !== resetTokenHash) {
+            return res.status(400).json({ message: 'Invalid reset token.' });
+        }
+
+        if (!user.resetTokenExpires || new Date() > user.resetTokenExpires) {
+            await user.update({ resetToken: null, resetTokenExpires: null });
+            return res.status(400).json({ message: 'Reset token has expired. Please request a new one.' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        await user.update({
+            password: hashedPassword,
+            resetToken: null,
+            resetTokenExpires: null
+        });
+
+        const subject = "🔐 Super Admin Password Reset Successful - QMS";
+        const emailBody = `
+            <h2>Password Reset Successful</h2>
+            <p>Dear ${user.name},</p>
+            <p>Your Super Admin password has been successfully reset.</p>
+            <p>You can now log into the Super Admin portal with your new password.</p>
+            <p><strong style="color: red;">⚠️ If you did not reset your password, this is a CRITICAL SECURITY ISSUE. Take immediate action.</strong></p>
+            <p>Best regards,<br>QMS Security Team</p>
+        `;
+
+        sendEmail(
+            user.email,
+            subject,
+            `🔐 Super Admin Password Reset Successful`,
+            emailBody
+        );
+
+        res.status(200).json({ 
+            message: '✅ Password has been reset successfully. You can now login with your new password.' 
+        });
+
+    } catch (error) {
+        console.error("Super Admin Reset Password Error:", error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// ============================================
+// ✅ ADMIN MANAGEMENT (Super Admin only)
+// ============================================
 
 // @route   GET /api/auth/admins/pending
 // @desc    Get all admins pending approval
@@ -335,12 +697,10 @@ router.put('/admins/:id/status', authMiddleware, async (req, res) => {
             return res.status(404).json({ message: 'Admin user not found.' });
         }
         
-        // Store old status before updating
         const oldStatus = admin.status; 
         admin.status = status;
         await admin.save();
         
-        // --- EMAIL NOTIFICATION for ADMIN STATUS CHANGE ---
         if (status !== oldStatus) {
             const subject = `Admin Account ${status.toUpperCase()}`;
             const emailBody = `
@@ -348,7 +708,7 @@ router.put('/admins/:id/status', authMiddleware, async (req, res) => {
                 <p>Dear ${admin.name},</p>
                 <p>Your Branch Admin registration has been <strong>${status.toUpperCase()}</strong> by a Super Admin.</p>
                 ${status === 'approved' 
-                    ? `<p>You can now log into the <a href="http://localhost:5000/Admin/adminaccess.html">Admin Portal</a> to manage your branch.</p>` 
+                    ? `<p>You can now log into the <a href="http://localhost:3000/Admin/adminaccess.html">Admin Portal</a> to manage your branch.</p>` 
                     : `<p>Please contact the Super Admin for more information on the rejection.</p>`
                 }
             `;
@@ -359,7 +719,6 @@ router.put('/admins/:id/status', authMiddleware, async (req, res) => {
                 emailBody
             );
         }
-        // --- END EMAIL NOTIFICATION ---
 
         res.json({ message: `Admin ${admin.name} has been successfully ${status}.` });
     } catch (error) {
