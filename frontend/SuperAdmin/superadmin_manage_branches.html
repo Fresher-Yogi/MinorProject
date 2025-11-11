@@ -15,6 +15,8 @@
         <div class="p-5 text-white text-2xl font-bold border-b border-gray-800">Super Admin</div>
         <nav class="flex-1 p-3 space-y-2">
             <a href="superadmin_dashboard.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-globe w-8"></i>Global Dashboard</a>
+            <!-- ✅ NEW LINK ADDED HERE -->
+            <a href="superadmin_manage_services.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-briefcase w-8"></i>Manage Services</a> 
             <a href="superadmin_approvals.html" class="flex items-center p-3 rounded-lg transition hover:bg-gray-700 hover:text-white"><i class="fas fa-user-check w-8"></i>Admin Approvals</a>
             <a href="superadmin_manage_branches.html" class="flex items-center p-3 rounded-lg sidebar-link-active"><i class="fas fa-store w-8"></i>Manage Branches</a>
         </nav>
@@ -47,6 +49,35 @@
                 <tbody id="branches-table-body"><tr><td colspan="4" class="text-center py-8"><i class="fas fa-spinner fa-spin text-purple-500 text-2xl"></i></td></tr></tbody>
             </table>
         </div>
+
+
+
+    <!-- ✅ NEW: Manage Services Modal -->
+    <div id="manage-services-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden modal-overlay">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Manage Services for: <span id="modal-branch-name" class="text-purple-600"></span></h2>
+                <button type="button" onclick="closeServicesModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-2xl"></i></button>
+            </div>
+            
+            <form id="link-services-form" onsubmit="handleLinkServices(event)">
+                <input type="hidden" id="link-branch-id">
+
+                <div id="services-list-container" class="max-h-80 overflow-y-auto space-y-3 p-4 border rounded-lg bg-gray-50">
+                    <!-- Services list will be loaded here by JavaScript -->
+                    <div class="text-center py-4"><i class="fas fa-spinner fa-spin text-purple-500"></i> Loading all services...</div>
+                </div>
+
+                <div class="flex justify-end gap-4 mt-6">
+                    <button type="button" onclick="closeServicesModal()" class="bg-gray-300 px-5 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
+                    <button type="submit" id="save-services-btn" class="bg-purple-600 text-white px-5 py-2 rounded-lg hover:bg-purple-700">Save Services</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- End of NEW Modal -->
+
+
     </main>
 
     <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden modal-overlay">
@@ -114,7 +145,14 @@
         tableBody.innerHTML = branches.map(branch => {
             const assignedAdmin = allAdmins.find(admin => admin.id === branch.adminId);
             const adminName = assignedAdmin ? `${assignedAdmin.name} (${assignedAdmin.email})` : '<em class="text-gray-400">Not Assigned</em>';
-            return `<tr class="border-b hover:bg-gray-50"><td class="py-4 px-4 font-bold">${branch.name}</td><td class="py-4 px-4">${adminName}</td><td class="py-4 px-4">${branch.location}</td><td class="py-4 px-4 space-x-3"><button onclick='openEditModal(${JSON.stringify(branch)})' class="text-blue-500 hover:underline"><i class="fas fa-edit"></i> Edit</button><button onclick="handleDeleteBranch(${branch.id})" class="text-red-500 hover:underline"><i class="fas fa-trash"></i> Delete</button></td></tr>`;
+            return `<tr class="border-b hover:bg-gray-50"><td class="py-4 px-4 font-bold">${branch.name}</td><td class="py-4 px-4">${adminName}</td><td class="py-4 px-4">${branch.location}</td>
+                <td class="py-4 px-4 space-x-3 flex items-center">
+    <button onclick='openManageServicesModal(${JSON.stringify(branch)})' class="text-green-500 hover:underline text-sm"><i class="fas fa-clipboard-list mr-1"></i>Services</button>
+    <button onclick='openEditModal(${JSON.stringify(branch)})' class="text-blue-500 hover:underline text-sm"><i class="fas fa-edit mr-1"></i>Edit</button>
+    <button onclick="handleDeleteBranch(${branch.id})" class="text-red-500 hover:underline text-sm"><i class="fas fa-trash mr-1"></i>Delete</button>
+</td>
+                
+                </tr>`;
         }).join('');
     }
     
@@ -224,6 +262,120 @@
             window.location.href = 'superadmin_access.html';
         }
     }
+
+
+
+    // Global variable to store all available services
+    let allServices = []; 
+    
+    // --- NEW FUNCTION: Fetch all available services once ---
+    async function fetchAllServices() {
+        const token = localStorage.getItem('token');
+        try {
+            const response = await fetch(`${API_URL}/services`, { headers: { 'x-auth-token': token } });
+            if (!response.ok) throw new Error('Failed to fetch services.');
+            allServices = await response.json();
+        } catch (error) {
+            console.error('Error fetching all services:', error.message);
+            alert('Error fetching all services: ' + error.message);
+        }
+    }
+    
+    // --- NEW FUNCTION: Open the Services Modal ---
+    async function openManageServicesModal(branch) {
+        if (allServices.length === 0) {
+             await fetchAllServices(); // Fetch services if not already done
+        }
+
+        const modal = document.getElementById('manage-services-modal');
+        const listContainer = document.getElementById('services-list-container');
+        const token = localStorage.getItem('token');
+        
+        document.getElementById('modal-branch-name').textContent = branch.name;
+        document.getElementById('link-branch-id').value = branch.id;
+        modal.classList.remove('hidden');
+
+        listContainer.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-purple-500"></i> Loading linked services...</div>';
+
+        try {
+            // 1. Fetch currently linked services for this branch
+            const linkedRes = await fetch(`${API_URL}/branches/${branch.id}/services`, { headers: { 'x-auth-token': token } });
+            if (!linkedRes.ok) throw new Error('Failed to fetch linked services.');
+            const linkedServices = await linkedRes.json();
+            const linkedIds = new Set(linkedServices.map(s => s.id));
+            
+            // 2. Render the list of all services with checkboxes
+            if (allServices.length === 0) {
+                 listContainer.innerHTML = '<p class="text-center text-gray-500">No services have been created yet. Please add them in the Service Categories panel.</p>';
+                 return;
+            }
+
+            listContainer.innerHTML = allServices.map(service => `
+                <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm">
+                    <label for="service-${service.id}" class="text-gray-700 font-medium">${service.name}</label>
+                    <input type="checkbox" id="service-${service.id}" name="serviceId" value="${service.id}" 
+                        ${linkedIds.has(service.id) ? 'checked' : ''} 
+                        class="h-5 w-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                </div>
+            `).join('');
+
+        } catch (error) {
+            console.error('Error in openManageServicesModal:', error);
+            listContainer.innerHTML = `<div class="bg-red-100 text-red-700 p-4 rounded-lg">Error: ${error.message}</div>`;
+        }
+    }
+
+    // --- NEW FUNCTION: Handle the form submission for linking services ---
+    async function handleLinkServices(event) {
+        event.preventDefault();
+        const token = localStorage.getItem('token');
+        const branchId = document.getElementById('link-branch-id').value;
+        const saveBtn = document.getElementById('save-services-btn');
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+
+        // Get all checked service IDs
+        const checkedServices = Array.from(document.querySelectorAll('#services-list-container input[name="serviceId"]:checked'))
+            .map(checkbox => parseInt(checkbox.value, 10));
+
+        try {
+            const response = await fetch(`${API_URL}/branches/${branchId}/services`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
+                body: JSON.stringify({ serviceIds: checkedServices })
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Failed to link services.');
+            
+            alert('✅ Services updated successfully!');
+            closeServicesModal();
+            loadData(); // Refresh the main branch list if needed
+
+        } catch (error) {
+            alert('❌ Error: ' + error.message);
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = 'Save Services';
+        }
+    }
+
+    // --- NEW FUNCTION: Close the Services Modal ---
+    function closeServicesModal() {
+        document.getElementById('manage-services-modal').classList.add('hidden');
+    }
+    
+    // --- MODIFY: Load services on page load ---
+    window.addEventListener('DOMContentLoaded', () => {
+        // ... existing auth check
+        // ... existing loadData() call
+        
+        // Call the new service fetch function
+        fetchAllServices(); 
+    });
+
+
+
 </script>
   
 

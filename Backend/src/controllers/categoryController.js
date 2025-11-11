@@ -1,6 +1,21 @@
 // Backend/src/controllers/categoryController.js
 const Category = require('../models/Category');
 
+// ✅ NEW FUNCTION: GET a single category by ID
+exports.getCategoryById = async (req, res) => {
+    try {
+        const category = await Category.findByPk(req.params.id);
+        if (!category) {
+            // CRITICAL: Return 404 response if not found
+            return res.status(404).json({ message: 'Category not found' });
+        }
+        res.json(category);
+    } catch (error) {
+        // Handle potential server errors (e.g., non-numeric ID in database query)
+        res.status(500).json({ message: 'Server Error fetching category.' });
+    }
+};
+
 // GET all categories
 exports.getAllCategories = async (req, res) => {
     try {

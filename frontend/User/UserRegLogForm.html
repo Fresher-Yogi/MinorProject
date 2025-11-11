@@ -10,8 +10,22 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #f0f4f8; }
-        .form-container { transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
-        .form-hidden { opacity: 0; transform: translateY(20px); position: absolute; pointer-events: none; }
+        .form-container { 
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; 
+            /* Added min-height to prevent layout jump */
+            min-height: 400px; 
+            position: relative; /* Ensure it stays in the flow */
+        }
+        .form-hidden { 
+            opacity: 0; 
+            transform: translateY(20px); 
+            /* Absolute position to allow fading/transition, important for three forms in one spot */
+            position: absolute; 
+            top: 0;
+            left: 0;
+            width: 100%;
+            pointer-events: none; 
+        }
         .tab-active { border-bottom-color: #3b82f6; color: #3b82f6; }
         .input-group { position: relative; }
         .input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; }
@@ -32,12 +46,15 @@
         </div>
         
         <div class="w-full md:w-1/2 p-8 sm:p-12">
+            <!-- Tabs are ONLY for Login/Register (OTP has no tab) -->
             <div class="flex border-b mb-8">
                 <button id="login-tab" class="flex-1 py-3 text-lg font-semibold text-center border-b-4 tab-active" onclick="showForm('login')">Login</button>
                 <button id="register-tab" class="flex-1 py-3 text-lg font-semibold text-center border-b-4 border-transparent text-gray-500" onclick="showForm('register')">Register</button>
             </div>
             
             <div class="relative">
+                
+                <!-- 1. Login Form -->
                 <div id="login-form" class="form-container">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">User Login</h2>
                     <form id="login-form-element" onsubmit="handleLogin(event)">
@@ -48,6 +65,7 @@
                     </form>
                 </div>
                 
+                <!-- 2. Registration Form -->
                 <div id="register-form" class="form-container form-hidden">
                     <h2 class="text-3xl font-bold text-gray-800 mb-6">Create Account</h2>
                     <form id="register-form-element" onsubmit="handleRegister(event)">
@@ -59,6 +77,23 @@
                         <button type="submit" id="register-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">Register</button>
                     </form>
                 </div>
+
+                <!-- 3. OTP Verification Form (New) -->
+                <div id="otp-form" class="form-container form-hidden">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Verify Your Email</h2>
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
+                        <p class="font-bold">Code Sent!</p>
+                        <p>A 6-digit verification code has been sent to <strong id="otp-email-display" class="break-all"></strong>. Check your inbox and spam folder.</p>
+                    </div>
+                    <form onsubmit="handleOtpVerification(event)">
+                        <div class="mb-5 input-group">
+                            <i class="fas fa-key input-icon"></i>
+                            <input type="text" id="otp-code" placeholder="Enter 6-Digit OTP" class="form-input text-center text-xl font-bold tracking-widest" maxlength="6" required>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-6">Didn't receive the code? <a href="#" onclick="showForm('register')" class="text-blue-600 hover:underline">Re-register to resend.</a></p>
+                        <button type="submit" id="verify-otp-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">Verify Account</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -66,22 +101,33 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script>
         const API_URL = 'http://localhost:5000/api';
-        
+        let currentRegEmail = null; // Variable to store the email for verification
+
         function showForm(formName) {
             const loginForm = document.getElementById('login-form');
             const registerForm = document.getElementById('register-form');
+            const otpForm = document.getElementById('otp-form');
             const loginTab = document.getElementById('login-tab');
             const registerTab = document.getElementById('register-tab');
+            
+            // Hide all forms first
+            loginForm.classList.add('form-hidden');
+            registerForm.classList.add('form-hidden');
+            otpForm.classList.add('form-hidden');
+
+            // Reset tabs
+            loginTab.classList.remove('tab-active');
+            registerTab.classList.remove('tab-active');
+
             if (formName === 'login') {
                 loginForm.classList.remove('form-hidden');
-                registerForm.classList.add('form-hidden');
                 loginTab.classList.add('tab-active');
-                registerTab.classList.remove('tab-active');
-            } else {
-                loginForm.classList.add('form-hidden');
+            } else if (formName === 'register') {
                 registerForm.classList.remove('form-hidden');
-                loginTab.classList.remove('tab-active');
                 registerTab.classList.add('tab-active');
+            } else if (formName === 'otp') {
+                otpForm.classList.remove('form-hidden');
+                // Don't activate a tab for OTP form
             }
         }
         
@@ -96,7 +142,7 @@
             event.preventDefault();
             const btn = document.getElementById('register-btn');
             btn.disabled = true;
-            btn.textContent = 'Creating Account...';
+            btn.textContent = 'Sending Code...';
             
             const name = document.getElementById('reg-name').value.trim();
             const email = document.getElementById('reg-email').value.trim();
@@ -118,6 +164,7 @@
             }
             
             try {
+                // Backend now returns HTTP 200 with a message and the email, NOT token
                 const response = await fetch(`${API_URL}/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -126,33 +173,77 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    showToast('✅ Account created successfully! Welcome!');
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
-
-                    // ✅ --- START: CORRECT REDIRECT LOGIC --- ✅
-                    const intendedService = sessionStorage.getItem('selectedService');
-                    if (intendedService) {
-                        // If user was trying to book, send them to the booking page
-                        setTimeout(() => { window.location.href = '../Branches/Select-Slot.html'; }, 1500);
-                    } else {
-                        // Otherwise, send them to the default dashboard
-                        setTimeout(() => { window.location.href = 'User-Dashboard.html'; }, 1500);
-                    }
-                    // ✅ --- END: CORRECT REDIRECT LOGIC --- ✅
-
+                    currentRegEmail = data.email; // Store the email globally
+                    document.getElementById('otp-email-display').textContent = data.email;
+                    showToast('✅ Code sent successfully! Check your inbox/spam folder.', false);
+                    showForm('otp'); // Switch to the OTP verification form
+                    // Reset the password fields in case they need to re-register
+                    document.getElementById('reg-password').value = '';
+                    document.getElementById('reg-confirm-password').value = '';
                 } else {
                     showToast(`❌ ${data.message || 'Registration failed.'}`, true);
-                    btn.disabled = false;
-                    btn.textContent = 'Register';
                 }
             } catch (error) {
                 showToast('❌ Network error. Could not connect to server.', true);
+            } finally {
                 btn.disabled = false;
                 btn.textContent = 'Register';
             }
         }
+        
+        // NEW: OTP Verification Function
+        async function handleOtpVerification(event) {
+            event.preventDefault();
+            const btn = document.getElementById('verify-otp-btn');
+            btn.disabled = true;
+            btn.textContent = 'Verifying...';
 
+            const otp = document.getElementById('otp-code').value.trim();
+            
+            if (!otp || otp.length !== 6) {
+                showToast('❌ OTP must be 6 digits.', true);
+                btn.disabled = false;
+                btn.textContent = 'Verify Account';
+                return;
+            }
+            if (!currentRegEmail) {
+                showToast('❌ No email stored for verification. Please re-register.', true);
+                btn.disabled = false;
+                btn.textContent = 'Verify Account';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/verify-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: currentRegEmail, otp })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast('✅ Account Verified! Redirecting to Dashboard.', false);
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+
+                    const intendedService = sessionStorage.getItem('selectedService');
+                    if (intendedService) {
+                        setTimeout(() => { window.location.href = '../Branches/Select-Slot.html'; }, 1500);
+                    } else {
+                        setTimeout(() => { window.location.href = 'User-Dashboard.html'; }, 1500);
+                    }
+                } else {
+                    showToast(`❌ ${data.message || 'Verification failed.'}`, true);
+                }
+            } catch (error) {
+                showToast('❌ Network error during verification.', true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Verify Account';
+            }
+        }
+
+        // Updated Login Function to handle unverified users
         async function handleLogin(event) {
             event.preventDefault();
             const btn = document.getElementById('login-btn');
@@ -161,13 +252,6 @@
             
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
-            
-            if (!email || !password) {
-                showToast('❌ Please enter both email and password!', true);
-                btn.disabled = false;
-                btn.textContent = 'Login';
-                return;
-            }
             
             try {
                 const response = await fetch(`${API_URL}/auth/login`, {
@@ -181,25 +265,25 @@
                     showToast('✅ Login successful! Welcome back!');
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
-
-                    // ✅ --- START: CORRECT REDIRECT LOGIC --- ✅
+                    
                     const intendedService = sessionStorage.getItem('selectedService');
                     if (intendedService) {
-                        // If user was trying to book, send them to the booking page
                         setTimeout(() => { window.location.href = '../Branches/Select-Slot.html'; }, 1500);
                     } else {
-                        // Otherwise, send them to the default dashboard
                         setTimeout(() => { window.location.href = 'User-Dashboard.html'; }, 1500);
                     }
-                    // ✅ --- END: CORRECT REDIRECT LOGIC --- ✅
-
+                } else if (response.status === 403 && data.message.includes('not verified')) {
+                    // This handles the new 'Account not verified' error from the backend
+                    currentRegEmail = email;
+                    document.getElementById('otp-email-display').textContent = email;
+                    showToast('⚠️ Account not verified. Please enter the OTP sent to your email.', true);
+                    showForm('otp'); // Redirect to OTP form
                 } else {
                     showToast(`❌ ${data.message || 'Login failed.'}`, true);
-                    btn.disabled = false;
-                    btn.textContent = 'Login';
                 }
             } catch (error) {
                 showToast('❌ Network error. Could not connect to server.', true);
+            } finally {
                 btn.disabled = false;
                 btn.textContent = 'Login';
             }

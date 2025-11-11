@@ -2,26 +2,38 @@
 
 const express = require('express');
 const router = express.Router();
-const { getAllBranches, createBranch, getBranchById, getAvailableSlots } = require('../controllers/branchController');
+const { 
+    getAllBranches, 
+    createBranch, 
+    getBranchById, 
+    getAvailableSlots,
+    linkServicesToBranch // <-- NEW IMPORT
+} = require('../controllers/branchController');
 const authMiddleware = require('../middleware/authMiddleware');
 const Branch = require('../models/Branch');
 const User = require('../models/user');
+const Service = require('../models/Service'); // <-- NEW IMPORT (needed for associations in GET route)
+
+
+// Middleware to check for Super Admin role
+const isSuperAdmin = async (req, res, next) => {
+    try {
+        const user = await User.findByPk(req.user.id);
+        if (user && user.role === 'superadmin') {
+            return next();
+        }
+        res.status(403).json({ message: 'Access Denied: Super Admin role required.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 
 // Public route: Get all branches
 router.get('/', getAllBranches);
 
 // Super Admin Only: Create a new branch
-router.post('/', authMiddleware, async (req, res) => {
-    try {
-        const user = await User.findByPk(req.user.id);
-        if (!user || user.role !== 'superadmin') {
-            return res.status(403).json({ message: 'Access Denied. Only Super Admins can create branches.' });
-        }
-        createBranch(req, res);
-    } catch (error) {
-        res.status(500).json({ message: 'Server error during authorization.' });
-    }
-});
+router.post('/', authMiddleware, isSuperAdmin, createBranch);
 
 // Super Admin Only: Update a branch
 router.put('/:id', authMiddleware, async (req, res) => {
@@ -50,12 +62,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
 });
 
 // Super Admin Only: Delete a branch
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, isSuperAdmin, async (req, res) => {
     try {
-        const user = await User.findByPk(req.user.id);
-        if (!user || user.role !== 'superadmin') {
-            return res.status(403).json({ message: 'Access Denied.' });
-        }
         const branch = await Branch.findByPk(req.params.id);
         if (!branch) {
             return res.status(404).json({ message: 'Branch not found.' });
@@ -66,6 +74,42 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 });
+
+
+// ===============================================
+// ✅ NEW ROUTES FOR SERVICE LINKING (Super Admin)
+// ===============================================
+
+// @route   POST /api/branches/:branchId/services
+// @desc    Super Admin: Link an array of Service IDs to a Branch
+router.post('/:branchId/services', authMiddleware, isSuperAdmin, linkServicesToBranch);
+
+
+// @route   GET /api/branches/:branchId/services
+// @desc    Get all services offered by a specific branch
+router.get('/:branchId/services', async (req, res) => {
+    try {
+        // Find the branch and include its associated services (from the BranchServices join table)
+        const branch = await Branch.findByPk(req.params.branchId, {
+            include: { model: Service, through: { attributes: [] } } // Only need Service data, exclude join table fields
+        });
+        
+        if (!branch) {
+            return res.status(404).json({ message: 'Branch not found' });
+        }
+        
+        // The services are available on the Services property of the branch object
+        res.json(branch.Services || []); 
+    } catch (error) {
+        console.error("Error fetching branch services:", error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+
+// ===============================================
+// EXISTING ADMIN ROUTES (No Change)
+// ===============================================
 
 // ✅ CRITICAL FIX: Admin's "My Branch" route
 router.get('/my-branch', authMiddleware, async (req, res) => {
@@ -78,7 +122,8 @@ router.get('/my-branch', authMiddleware, async (req, res) => {
 
         // ✅ FIX: Use parseInt to ensure proper comparison
         const branch = await Branch.findOne({ 
-            where: { adminId: parseInt(user.id, 10) } 
+            where: { adminId: parseInt(user.id, 10) },
+            include: Service // Also include services offered by this branch for settings view
         });
 
         if (!branch) {

@@ -17,7 +17,6 @@
         <nav class="flex-1 p-3 space-y-2">
             <a href="admindashboard.html" class="flex items-center p-3 rounded-lg sidebar-link-active bg-blue-600"><i class="fas fa-tachometer-alt w-8"></i>Dashboard</a>
             <a href="adminQueueManage.html" class="flex items-center p-3 rounded-lg hover:bg-gray-700 cursor-pointer"><i class="fas fa-users w-8"></i>Manage Queues</a>
-            <!-- ✅ NEW: Link to the settings page -->
             <a href="admin-settings.html" class="flex items-center p-3 rounded-lg hover:bg-gray-700 cursor-pointer"><i class="fas fa-cog w-8"></i>Branch Settings</a>
         </nav>
         <div class="p-5 border-t border-gray-700">
@@ -33,16 +32,13 @@
 
         <main class="flex-1 p-6 overflow-y-auto">
             
-            <!-- ✅ NEW: Branch Information Section -->
             <div id="branch-info-container" class="mb-6">
-                <!-- This will be filled by JavaScript -->
                 <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
                     <p class="font-bold">Not Assigned</p>
                     <p>You are not assigned to a branch. Please contact a Super Admin.</p>
                 </div>
             </div>
 
-             <!-- Stats Cards -->
             <div id="stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div class="bg-blue-100 p-6 rounded-lg shadow flex items-center justify-between">
                     <div><h3 class="text-xl font-bold text-blue-800" id="total-apt">0</h3><p class="text-blue-600">Total Appointments</p></div>
@@ -72,14 +68,39 @@
             </div>
         </main>
     </div>
+    
+    <!-- Reschedule/Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Edit Appointment #<span id="modal-apt-id"></span></h2>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-2xl"></i></button>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">Editing Date/Time will notify the user via email.</p>
+            <form id="edit-appointment-form" onsubmit="handleReschedule(event)">
+                <input type="hidden" id="edit-apt-id">
+                <div class="space-y-4">
+                    <div><label class="block font-semibold">Service/User</label><p id="edit-apt-details" class="text-blue-600 font-medium"></p></div>
+                    <div><label class="block font-semibold">Appointment Date</label><input type="date" id="edit-apt-date" class="w-full p-2 border rounded-lg" required></div>
+                    <div><label class="block font-semibold">Time Slot</label><input type="time" id="edit-apt-time" class="w-full p-2 border rounded-lg" required></div>
+                    <div><label class="block font-semibold">Admin Notes</label><textarea id="edit-apt-notes" class="w-full p-2 border rounded-lg" rows="3"></textarea></div>
+                </div>
+                <div class="flex justify-end gap-4 mt-6">
+                    <button type="button" onclick="closeEditModal()" class="bg-gray-300 px-5 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
+                    <button type="submit" id="reschedule-btn" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">Save & Notify User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
     <script>
         const API_URL = 'http://localhost:5000';
         const socket = io(API_URL);
+        let appointments = []; // Store appointments globally
 
         socket.on('appointmentUpdated', (updatedApt) => { loadDashboard(); });
 
-        // ✅ UPDATED: This function now fetches branch info AND appointments
         async function loadDashboard() {
             const token = localStorage.getItem('token');
             const adminUser = JSON.parse(localStorage.getItem('user'));
@@ -91,13 +112,11 @@
             document.getElementById('admin-name').textContent = `Welcome, ${adminUser.name}!`;
 
             try {
-                // Fetch both branch details and appointments at the same time
                 const [branchRes, appointmentsRes] = await Promise.all([
                     fetch(`${API_URL}/api/branches/my-branch`, { headers: { 'x-auth-token': token } }),
                     fetch(`${API_URL}/api/appointments`, { headers: { 'x-auth-token': token } })
                 ]);
                 
-                // Handle Branch Info
                 const branchContainer = document.getElementById('branch-info-container');
                 if (branchRes.ok) {
                     const branch = await branchRes.json();
@@ -108,14 +127,12 @@
                         </div>
                     `;
                 } else {
-                    // Keep the default "Not Assigned" message
                     document.getElementById('appointments-container').innerHTML = `<p class="text-center py-8">Please ask a Super Admin to assign you to a branch to see appointments.</p>`;
-                    return; // Stop if not assigned to a branch
+                    return; 
                 }
 
-                // Handle Appointments
                 if (!appointmentsRes.ok) throw new Error('Failed to fetch appointments.');
-                const appointments = await appointmentsRes.json();
+                appointments = await appointmentsRes.json(); // Store to global array
                 
                 updateStats(appointments);
                 displayAppointments(appointments);
@@ -154,9 +171,10 @@
                     <td class="py-4 px-4"><span class="px-3 py-1 rounded-full text-xs font-semibold ${statusColor}">${a.status.toUpperCase()}</span></td>
                     <td class="py-4 px-4 flex space-x-2">
                         ${a.status === 'pending' ? `
+                        <button onclick="openEditModal(${a.id})" title="Edit/Reschedule" class="bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 rounded-full transition"><i class="fas fa-pencil-alt"></i></button>
                         <button onclick="updateStatus(${a.id}, 'completed')" title="Complete" class="bg-green-50 text-green-600 hover:bg-green-100 p-2 rounded-full transition"><i class="fas fa-check"></i></button>
                         <button onclick="updateStatus(${a.id}, 'cancelled')" title="Cancel" class="bg-red-50 text-red-600 hover:bg-red-100 p-2 rounded-full transition"><i class="fas fa-times"></i></button>
-                        ` : `<span class="text-gray-400 text-sm italic">No actions</span>`}
+                        ` : `<span class="text-gray-400 text-sm italic">${a.status.toUpperCase()}</span>`}
                     </td>
                 </tr>
             `}).join('');
@@ -175,6 +193,66 @@
                 loadDashboard();
             } catch (err) { alert(err.message); }
         }
+        
+        // --- NEW FUNCTIONS FOR RESCHEDULE MODAL ---
+
+        function openEditModal(aptId) {
+            // Find the appointment in the globally stored array
+            const appointment = appointments.find(a => a.id === aptId);
+            if (!appointment) return;
+
+            document.getElementById('edit-apt-id').value = aptId;
+            document.getElementById('modal-apt-id').textContent = aptId;
+            document.getElementById('edit-apt-details').textContent = `${appointment.serviceType} (User #${appointment.userId})`;
+            document.getElementById('edit-apt-date').value = appointment.appointmentDate;
+            document.getElementById('edit-apt-time').value = appointment.timeSlot;
+            document.getElementById('edit-apt-notes').value = appointment.notes || '';
+            
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        async function handleReschedule(event) {
+            event.preventDefault();
+            const token = localStorage.getItem('token');
+            const aptId = document.getElementById('edit-apt-id').value;
+            const rescheduleBtn = document.getElementById('reschedule-btn');
+            rescheduleBtn.disabled = true;
+            rescheduleBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+
+            const payload = {
+                appointmentDate: document.getElementById('edit-apt-date').value,
+                timeSlot: document.getElementById('edit-apt-time').value,
+                notes: document.getElementById('edit-apt-notes').value
+            };
+
+            try {
+                // Call the new backend endpoint
+                const res = await fetch(`${API_URL}/api/appointments/${aptId}/reschedule`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+                
+                if (!res.ok) throw new Error(result.message);
+                
+                alert(`✅ Appointment #${aptId} rescheduled successfully! User has been notified by email.`);
+                closeEditModal();
+                loadDashboard(); // Refresh data
+
+            } catch (err) { 
+                alert(`❌ Error rescheduling: ${err.message}`);
+            } finally {
+                rescheduleBtn.disabled = false;
+                rescheduleBtn.innerHTML = 'Save & Notify User';
+            }
+        }
+        
+        // --- END NEW FUNCTIONS FOR RESCHEDULE MODAL ---
 
         function logout() {
             localStorage.removeItem('token');

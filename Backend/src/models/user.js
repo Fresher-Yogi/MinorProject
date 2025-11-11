@@ -1,3 +1,4 @@
+// --- CORRECT CONTENT for src/models/user.js ---
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
@@ -21,21 +22,32 @@ const User = sequelize.define('User', {
   },
   role: {
     type: DataTypes.STRING,
-    defaultValue: 'user' // By default, anyone who registers is a 'user'
+    defaultValue: 'user' 
   },
-  
-  // --- ✅ NEW FIELD ADDED ---
-  // This field will track the status of an admin's account
   status: {
     type: DataTypes.STRING,
-    // For normal users, the status will always be 'approved'.
-    // For admins, it can be 'pending_approval', 'approved', or 'rejected'.
     defaultValue: 'approved'
+  },
+  
+  // ✅ NEW FIELD: OTP for email verification
+  otp: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    comment: 'Temporary OTP for email verification'
+  },
+  otpExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Expiration time for the OTP'
+  },
+  isVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      comment: 'Whether the user has successfully verified their email'
   }
-  // --- ✅ END OF NEW FIELD ---
-
 }, {
   tableName: 'users' // This ensures Sequelize uses your existing 'users' table
 });
 
 module.exports = User;
+// --- END OF CORRECT CONTENT for src/models/user.js ---

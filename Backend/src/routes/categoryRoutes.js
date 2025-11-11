@@ -18,8 +18,13 @@ const isSuperAdmin = async (req, res, next) => {
     }
 };
 
-// Public Route (anyone can see categories)
+// Public Route (anyone can see all categories)
 router.get('/', controller.getAllCategories);
+
+// ✅ NEW PUBLIC ROUTE: Get a single category by ID
+// This is essential for the service-details.html page.
+router.get('/:id', controller.getCategoryById);
+
 
 // Protected Super Admin Routes
 router.post('/', authMiddleware, isSuperAdmin, controller.createCategory);

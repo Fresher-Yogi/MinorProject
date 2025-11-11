@@ -114,34 +114,45 @@
             </div>
         </section>
 
-        <!-- Services Section -->
-        <section id="services" class="py-24 bg-gray-50">
-            <div class="container mx-auto px-6 text-center">
-                <h2 class="section-title text-4xl font-bold mb-16">Who Can Benefit?</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-                    <a href="Services/hospitalservices.html" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in">
-                        <i class="fas fa-hospital fa-3x text-blue-500 mb-5"></i>
-                        <h3 class="text-2xl font-bold mb-3">Hospitals</h3>
-                        <p>Manage patient appointments for consultations, check-ups, and emergencies efficiently.</p>
-                    </a>
-                    <a href="Service/BankingService.html" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in" style="animation-delay: 0.2s;">
-                        <i class="fas fa-university fa-3x text-blue-500 mb-5"></i>
-                        <h3 class="text-2xl font-bold mb-3">Banks</h3>
-                        <p>Streamline customer service for deposits, withdrawals, and financial consultations.</p>
-                    </a>
-                    <a href="Services/CollgeService.html" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in" style="animation-delay: 0.4s;">
-                        <i class="fas fa-school fa-3x text-blue-500 mb-5"></i>
-                        <h3 class="text-2xl font-bold mb-3">Colleges</h3>
-                        <p>Organize student queues for admissions, fee payments, and administrative queries.</p>
-                    </a>
-                    <a href="Services/ServiceCenterServices.html" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in" style="animation-delay: 0.6s;">
-                        <i class="fas fa-concierge-bell fa-3x text-blue-500 mb-5"></i>
-                        <h3 class="text-2xl font-bold mb-3">Service Centers</h3>
-                        <p>Handle customer appointments for repairs, support, and product demonstrations.</p>
-                    </a>
-                </div>
-            </div>
-        </section>
+      <!-- Services Section -->
+<section id="services" class="py-24 bg-gray-50">
+    <div class="container mx-auto px-6 text-center">
+        <h2 class="section-title text-4xl font-bold mb-16">Who Can Benefit?</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+            <!-- ❌ OLD LINK: href="Services/hospitalservices.html" -->
+            <!-- ✅ NEW DYNAMIC LINK: Pass the Category ID (Example assumes ID=1 for Hospital) -->
+            <a href="Services/service-details.html?id=1" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in">
+                <i class="fas fa-hospital fa-3x text-blue-500 mb-5"></i>
+                <h3 class="text-2xl font-bold mb-3">Hospitals</h3>
+                <p>Manage patient appointments for consultations, check-ups, and emergencies efficiently.</p>
+            </a>
+            
+            <!-- ❌ OLD LINK: href="Service/BankingService.html" -->
+            <!-- ✅ NEW DYNAMIC LINK: Pass the Category ID (Example assumes ID=2 for Banks) -->
+            <a href="Services/service-details.html?id=2" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in" style="animation-delay: 0.2s;">
+                <i class="fas fa-university fa-3x text-blue-500 mb-5"></i>
+                <h3 class="text-2xl font-bold mb-3">Banks</h3>
+                <p>Streamline customer service for deposits, withdrawals, and financial consultations.</p>
+            </a>
+            
+            <!-- ❌ OLD LINK: href="Services/CollgeService.html" -->
+            <!-- ✅ NEW DYNAMIC LINK: Pass the Category ID (Example assumes ID=3 for Colleges) -->
+            <a href="Services/service-details.html?id=3" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in" style="animation-delay: 0.4s;">
+                <i class="fas fa-school fa-3x text-blue-500 mb-5"></i>
+                <h3 class="text-2xl font-bold mb-3">Colleges</h3>
+                <p>Organize student queues for admissions, fee payments, and administrative queries.</p>
+            </a>
+            
+            <!-- ❌ OLD LINK: href="Services/ServiceCenterServices.html" -->
+            <!-- ✅ NEW DYNAMIC LINK: Pass the Category ID (Example assumes ID=4 for Service Centers) -->
+            <a href="Services/service-details.html?id=4" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in" style="animation-delay: 0.6s;">
+                <i class="fas fa-concierge-bell fa-3x text-blue-500 mb-5"></i>
+                <h3 class="text-2xl font-bold mb-3">Service Centers</h3>
+                <p>Handle customer appointments for repairs, support, and product demonstrations.</p>
+            </a>
+        </div>
+    </div>
+</section>
 
         <!-- Features Section -->
         <section id="features" class="py-24 bg-white">
