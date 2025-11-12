@@ -72,7 +72,7 @@
                 const today = new Date().toISOString().slice(0, 10);
                 const todaysQueue = allAppointments
                     .filter(apt => apt.appointmentDate === today && apt.status === 'pending')
-                    .sort((a, b) => a.timeSlot.localeCompare(b.timeSlot)); // Sort by time
+                    .sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
 
                 const groupedByService = todaysQueue.reduce((acc, apt) => {
                     (acc[apt.serviceType] = acc[apt.serviceType] || []).push(apt);
@@ -94,7 +94,7 @@
             container.innerHTML = Object.entries(groupedData).map(([service, appointments]) => {
                 const currentlyServing = appointments[0];
                 const upNext = appointments.slice(1);
-                // ✅ UPDATED: The HTML now includes the queueNumber for each appointment.
+                
                 return `
                     <div class="bg-white p-5 rounded-lg shadow-md queue-card">
                         <div class="border-b pb-3 mb-4">
@@ -103,7 +103,7 @@
                         </div>
                         ${currentlyServing ? `
                         <div class="p-4 rounded-lg mb-4 currently-serving">
-                            <p class="text-sm font-bold text-blue-700">NOW SERVING (QUEUE #${currentlyServing.queueNumber})</p>
+                            <p class="text-sm font-bold text-blue-700">NOW SERVING (TOKEN #${currentlyServing.queueNumber})</p>
                             <div class="flex items-center justify-between mt-1">
                                 <div>
                                     <p class="text-lg font-bold">User #${currentlyServing.userId}</p>
@@ -122,7 +122,7 @@
                                 <div class="bg-gray-50 p-3 rounded-md flex justify-between items-center">
                                     <div>
                                         <p class="font-semibold">User #${apt.userId}</p>
-                                        <p class="text-xs text-gray-500">Queue #${apt.queueNumber}</p>
+                                        <p class="text-xs text-gray-500">Token #${apt.queueNumber}</p>
                                     </div>
                                     <p class="text-sm text-gray-500 font-medium">${apt.timeSlot}</p>
                                 </div>

@@ -114,46 +114,22 @@
             </div>
         </section>
 
-      <!-- Services Section -->
-<section id="services" class="py-24 bg-gray-50">
-    <div class="container mx-auto px-6 text-center">
-        <h2 class="section-title text-4xl font-bold mb-16">Who Can Benefit?</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-            <!-- ❌ OLD LINK: href="Services/hospitalservices.html" -->
-            <!-- ✅ NEW DYNAMIC LINK: Pass the Category ID (Example assumes ID=1 for Hospital) -->
-            <a href="Services/service-details.html?id=1" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in">
-                <i class="fas fa-hospital fa-3x text-blue-500 mb-5"></i>
-                <h3 class="text-2xl font-bold mb-3">Hospitals</h3>
-                <p>Manage patient appointments for consultations, check-ups, and emergencies efficiently.</p>
-            </a>
-            
-            <!-- ❌ OLD LINK: href="Service/BankingService.html" -->
-            <!-- ✅ NEW DYNAMIC LINK: Pass the Category ID (Example assumes ID=2 for Banks) -->
-            <a href="Services/service-details.html?id=2" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in" style="animation-delay: 0.2s;">
-                <i class="fas fa-university fa-3x text-blue-500 mb-5"></i>
-                <h3 class="text-2xl font-bold mb-3">Banks</h3>
-                <p>Streamline customer service for deposits, withdrawals, and financial consultations.</p>
-            </a>
-            
-            <!-- ❌ OLD LINK: href="Services/CollgeService.html" -->
-            <!-- ✅ NEW DYNAMIC LINK: Pass the Category ID (Example assumes ID=3 for Colleges) -->
-            <a href="Services/service-details.html?id=3" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in" style="animation-delay: 0.4s;">
-                <i class="fas fa-school fa-3x text-blue-500 mb-5"></i>
-                <h3 class="text-2xl font-bold mb-3">Colleges</h3>
-                <p>Organize student queues for admissions, fee payments, and administrative queries.</p>
-            </a>
-            
-            <!-- ❌ OLD LINK: href="Services/ServiceCenterServices.html" -->
-            <!-- ✅ NEW DYNAMIC LINK: Pass the Category ID (Example assumes ID=4 for Service Centers) -->
-            <a href="Services/service-details.html?id=4" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in" style="animation-delay: 0.6s;">
-                <i class="fas fa-concierge-bell fa-3x text-blue-500 mb-5"></i>
-                <h3 class="text-2xl font-bold mb-3">Service Centers</h3>
-                <p>Handle customer appointments for repairs, support, and product demonstrations.</p>
-            </a>
-        </div>
-    </div>
-</section>
-
+        <!-- =============================================================== -->
+        <!-- ✅ THIS IS THE CORRECTED AND DYNAMIC SERVICES SECTION           -->
+        <!-- =============================================================== -->
+        <section id="services" class="py-24 bg-gray-50">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="section-title text-4xl font-bold mb-16">Who Can Benefit?</h2>
+                <div id="service-category-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+                    <!-- Categories will be loaded here by JavaScript -->
+                    <div class="col-span-full text-center py-8">
+                        <i class="fas fa-spinner fa-spin text-blue-500 text-3xl"></i>
+                        <p class="mt-2 text-gray-600">Loading Service Categories...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
         <!-- Features Section -->
         <section id="features" class="py-24 bg-white">
             <div class="container mx-auto px-6 text-center">
@@ -177,24 +153,13 @@
                     <p class="text-lg mt-4">Have questions? We'd love to hear from you.</p>
                 </div>
                 <div class="flex flex-wrap">
-                    <!-- Contact Info -->
                     <div class="w-full lg:w-1/2 px-4 mb-12 lg:mb-0">
                         <div class="bg-white p-8 rounded-xl shadow-lg h-full flex flex-col justify-center">
-                            <div class="flex items-center mb-6">
-                                <div class="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center mr-5"><i class="fas fa-envelope fa-lg"></i></div>
-                                <div><h4 class="font-semibold text-lg">Email Us</h4><p class="text-gray-600">contact@qms.com</p></div>
-                            </div>
-                            <div class="flex items-center mb-6">
-                                <div class="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center mr-5"><i class="fas fa-phone fa-lg"></i></div>
-                                <div><h4 class="font-semibold text-lg">Call Us</h4><p class="text-gray-600">+1 (555) 123-4567</p></div>
-                            </div>
-                             <div class="flex items-center">
-                                <div class="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center mr-5"><i class="fas fa-map-marker-alt fa-lg"></i></div>
-                                <div><h4 class="font-semibold text-lg">Visit Us</h4><p class="text-gray-600">123 Tech Avenue, Silicon Valley, CA 94043</p></div>
-                            </div>
+                            <div class="flex items-center mb-6"><div class="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center mr-5"><i class="fas fa-envelope fa-lg"></i></div><div><h4 class="font-semibold text-lg">Email Us</h4><p class="text-gray-600">contact@qms.com</p></div></div>
+                            <div class="flex items-center mb-6"><div class="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center mr-5"><i class="fas fa-phone fa-lg"></i></div><div><h4 class="font-semibold text-lg">Call Us</h4><p class="text-gray-600">+1 (555) 123-4567</p></div></div>
+                             <div class="flex items-center"><div class="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center mr-5"><i class="fas fa-map-marker-alt fa-lg"></i></div><div><h4 class="font-semibold text-lg">Visit Us</h4><p class="text-gray-600">123 Tech Avenue, Silicon Valley, CA 94043</p></div></div>
                         </div>
                     </div>
-                    <!-- Contact Form -->
                     <div class="w-full lg:w-1/2 px-4">
                         <form action="#" method="POST" class="bg-white p-8 rounded-xl shadow-lg">
                             <div class="mb-5"><input type="text" placeholder="Your Name" class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
@@ -217,19 +182,48 @@
     </footer>
 
     <script>
-        // Simple Intersection Observer for fade-in animations
-        const faders = document.querySelectorAll('.fade-in');
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('fade-in-visible');
-                }
-            });
-        }, { threshold: 0.1 });
+        // ===============================================================
+        // ✅ NEW JAVASCRIPT TO DYNAMICALLY LOAD CATEGORIES
+        // ===============================================================
+        const API_URL = 'http://localhost:5000/api';
 
-        faders.forEach(fader => {
-            observer.observe(fader);
+        window.addEventListener('DOMContentLoaded', () => {
+            loadServiceCategories();
         });
+
+        async function loadServiceCategories() {
+            const grid = document.getElementById('service-category-grid');
+            try {
+                const response = await fetch(`${API_URL}/categories`);
+                if (!response.ok) throw new Error('Could not fetch categories.');
+                
+                const categories = await response.json();
+
+                if (categories.length === 0) {
+                    grid.innerHTML = '<p class="col-span-full text-gray-500">No service categories have been set up by the administrator yet.</p>';
+                    return;
+                }
+
+                // Clear the spinner
+                grid.innerHTML = ''; 
+
+                categories.forEach(category => {
+                    const card = `
+                        <a href="Services/service-details.html?id=${category.id}" class="service-card block bg-white p-8 rounded-xl shadow-lg fade-in">
+                            <i class="fas ${category.icon} fa-3x text-blue-500 mb-5"></i>
+                            <h3 class="text-2xl font-bold mb-3">${category.name}</h3>
+                            <p>${category.description || ''}</p>
+                        </a>
+                    `;
+                    grid.innerHTML += card;
+                });
+
+            } catch (error) {
+                console.error(error);
+                grid.innerHTML = `<p class="col-span-full text-red-500">${error.message}</p>`;
+            }
+        }
+
 
         // Mobile menu functionality (can be expanded)
         const mobileMenuButton = document.getElementById('mobile-menu-button');

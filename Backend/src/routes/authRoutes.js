@@ -265,7 +265,6 @@ module.exports = router;
 
 
 
-
 // // --- FINAL, COMPLETE CODE for backend/src/routes/authRoutes.js WITH PASSWORD RESET ---
 
 // const express = require('express');

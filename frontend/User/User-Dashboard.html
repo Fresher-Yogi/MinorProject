@@ -1,5 +1,3 @@
-<!-- --- START OF FILE User-Dashboard.html --- -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,12 +16,6 @@
         .sidebar-link-active { background-color: #2563eb; color: white; } 
         .modal-overlay { transition: opacity 0.3s ease; }
         .modal-content { transition: transform 0.3s ease; }
-        .highlight-turn { animation: pulse-border 2s infinite; background-color: #ebf5ff; }
-        @keyframes pulse-border {
-            0% { border-color: #3b82f6; }
-            50% { border-color: #93c5fd; }
-            100% { border-color: #3b82f6; }
-        }
     </style>
 </head>
 <body class="bg-gray-100 flex h-screen">
@@ -73,66 +65,17 @@
                 <p><strong class="w-24 inline-block">Branch:</strong> <span id="modal-branch-name" class="font-semibold"></span></p>
                 <p><strong class="w-24 inline-block">Date:</strong> <span id="modal-date" class="font-semibold"></span></p>
                 <p><strong class="w-24 inline-block">Time:</strong> <span id="modal-time" class="font-semibold"></span></p>
-                <p><strong class="w-24 inline-block">Queue No:</strong> <span id="modal-queue" class="font-bold text-xl text-red-600"></span></p>
+                <!-- ✅ CHANGED "Queue No" to "Token No" -->
+                <p><strong class="w-24 inline-block">Token No:</strong> <span id="modal-queue" class="font-bold text-xl text-red-600"></span></p>
             </div>
         </div>
     </div>
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-
     <script>
         const API_URL = 'http://localhost:5000';
         const socket = io(API_URL);
-        // ✅ --- CHANGE 1: ADDITIVE CODE --- ✅
-        let userAppointments = []; // Global variable to hold user's appointments
 
-        socket.on('connect', () => console.log('✅ Connected to Socket.IO server!'));
-        
-        // This is your original 'appointmentUpdated' listener
-        socket.on('appointmentUpdated', (updatedAppointment) => {
-            const currentUser = JSON.parse(localStorage.getItem('user'));
-            if (currentUser && currentUser.id === updatedAppointment.userId) {
-                console.log('Real-time update received for my appointment!', updatedAppointment);
-                fetchAndDisplayData(); 
-                alert(`Your appointment status has been updated to: ${updatedAppointment.status.toUpperCase()}`);
-            }
-        });
-
-        // This is your original 'queueUpdate' listener for "Your Turn"
-        socket.on('queueUpdate', (data) => {
-             const currentUser = JSON.parse(localStorage.getItem('user'));
-             if (currentUser && data.nextAppointment && currentUser.id === data.nextAppointment.userId) {
-                 alert("IT'S YOUR TURN NEXT!\n\nPlease proceed to the service counter.");
-                 const myAppointmentCard = document.getElementById(`appointment-card-${data.nextAppointment.id}`);
-                 if (myAppointmentCard) {
-                     myAppointmentCard.style.backgroundColor = '#dbeafe';
-                     myAppointmentCard.style.border = '2px solid #2563eb';
-                 }
-             }
-        });
-
-        // ✅ --- CHANGE 2: ADDITIVE CODE FOR CANCELLATION NOTIFICATIONS --- ✅
-        socket.on('queueModified', (data) => {
-            console.log('Queue modification signal received:', data);
-            const currentUser = JSON.parse(localStorage.getItem('user'));
-            if (!currentUser) return;
-
-            // Check if the current user has a pending appointment in the affected queue
-            const isUserAffected = userAppointments.some(apt => 
-                apt.status === 'pending' &&
-                apt.userId === currentUser.id &&
-                apt.branchId === data.branchId &&
-                apt.appointmentDate === data.appointmentDate &&
-                apt.serviceType === data.serviceType
-            );
-
-            if (isUserAffected) {
-                showToast("Queue Update: A slot has opened up ahead of you. The list is refreshing.");
-                fetchAndDisplayData();
-            }
-        });
-
-        // This is your original 'DOMContentLoaded' listener
         window.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
             const user = JSON.parse(localStorage.getItem('user'));
@@ -143,8 +86,7 @@
             document.getElementById('user-name').textContent = user.name;
             fetchAndDisplayData();
         });
-        
-        // This is your original 'fetchAndDisplayData' function
+
         async function fetchAndDisplayData() {
             const token = localStorage.getItem('token');
             try {
@@ -156,16 +98,12 @@
                 const branches = await branchesRes.json();
                 const branchMap = new Map(branches.map(b => [b.id, b]));
                 
-                // ✅ --- CHANGE 3: ADDITIVE CODE --- ✅
-                userAppointments = appointments; // Populate the global variable
-                
                 displayDynamicData(appointments, branchMap);
             } catch (error) {
                 console.error("Failed to fetch dashboard data:", error);
             }
         }
         
-        // This is your original 'displayDynamicData' function
         function displayDynamicData(appointments, branchMap) {
             const pendingCount = appointments.filter(a => a.status === 'pending').length;
             const completedCount = appointments.filter(a => a.status === 'completed').length;
@@ -190,13 +128,31 @@
                         ${upcomingAppointments.map(apt => {
                             const branch = branchMap.get(apt.branchId);
                             const date = new Date(apt.appointmentDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-                            return `<div id="appointment-card-${apt.id}" class="p-4 border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center"><div><p class="font-bold text-lg">${apt.serviceType}</p><p class="text-sm text-gray-600">${branch.name} | ${date} at ${apt.timeSlot}</p><p class="text-xs text-gray-400">Queue #${apt.queueNumber}</p></div><div class="flex items-center gap-4 mt-3 sm:mt-0"><span id="status-badge-${apt.id}" class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">Pending</span><button onclick='openTicketModal(${JSON.stringify(apt)}, ${JSON.stringify(branch)})' class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition text-sm"><i class="fas fa-qrcode mr-2"></i>View Ticket</button></div></div>`;
+                            return `
+                            <div id="appointment-card-${apt.id}" class="p-4 border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                                <div>
+                                    <p class="font-bold text-lg">${apt.serviceType}</p>
+                                    <p class="text-sm text-gray-600">${branch.name} | ${date} at ${apt.timeSlot}</p>
+                                    <!-- ✅ CHANGED "Queue #" to "Token #" -->
+                                    <p class="text-xs text-gray-400">Token #${apt.queueNumber}</p>
+                                </div>
+                                <div class="flex items-center gap-2 mt-3 sm:mt-0">
+                                    <span id="status-badge-${apt.id}" class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">Pending</span>
+                                    
+                                    <a href="User-Queue-Status.html?id=${apt.id}" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-3 rounded-lg transition text-sm">
+                                        <i class="fas fa-walking mr-1"></i> Track Live
+                                    </a>
+
+                                    <button onclick='openTicketModal(${JSON.stringify(apt)}, ${JSON.stringify(branch)})' class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg transition text-sm">
+                                        <i class="fas fa-qrcode mr-1"></i> Ticket
+                                    </button>
+                                </div>
+                            </div>`;
                         }).join('')}
                     </div>
                 </div>`;
         }
-
-        // This is your original 'openTicketModal' function
+        
         function openTicketModal(appointment, branch) {
             const modal = document.getElementById('ticket-modal');
             const qrContainer = document.getElementById('qrcode-container');
@@ -206,28 +162,30 @@
             document.getElementById('modal-time').textContent = appointment.timeSlot;
             document.getElementById('modal-queue').textContent = `#${appointment.queueNumber}`;
             qrContainer.innerHTML = "";
-            const qrData = JSON.stringify({ appointmentId: appointment.id, userId: appointment.userId, branchId: appointment.branchId, date: appointment.appointmentDate, time: appointment.timeSlot, queue: appointment.queueNumber });
+            
+            // ✅ CHANGED "queue" key to "token" for consistency
+            const qrData = JSON.stringify({ 
+                appointmentId: appointment.id, 
+                userId: appointment.userId, 
+                branchId: appointment.branchId,
+                token: appointment.queueNumber 
+            });
             new QRCode(qrContainer, { text: qrData, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.H });
             modal.classList.remove('hidden');
         }
 
-        // This is your original 'closeTicketModal' function
         function closeTicketModal() {
-            const modal = document.getElementById('ticket-modal');
-            modal.classList.add('hidden');
+            document.getElementById('ticket-modal').classList.add('hidden');
         }
 
-        // This is your original 'showToast' function
-        function showToast(message, isError=false){ Toastify({ text: message, duration: 3500, style: { background: isError ? "#ef4444" : "#22c55e" }, }).showToast(); }
-        
-        // This is your original 'handleLogout' function
         function handleLogout() {
             if (confirm('Are you sure you want to logout?')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+                localStorage.clear();
                 window.location.href = 'UserRegLogForm.html';
             }
         }
     </script>
 </body>
-</html>
+</html>```
+
+---

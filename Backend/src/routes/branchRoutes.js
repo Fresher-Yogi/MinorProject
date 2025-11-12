@@ -7,13 +7,13 @@ const {
     createBranch, 
     getBranchById, 
     getAvailableSlots,
-    linkServicesToBranch // <-- NEW IMPORT
+    linkServicesToBranch, // <-- NEW IMPORT
+    getBranchesForService // <-- NEW IMPORT
 } = require('../controllers/branchController');
 const authMiddleware = require('../middleware/authMiddleware');
 const Branch = require('../models/Branch');
 const User = require('../models/user');
-const Service = require('../models/Service'); // <-- NEW IMPORT (needed for associations in GET route)
-
+const Service = require('../models/Service');
 
 // Middleware to check for Super Admin role
 const isSuperAdmin = async (req, res, next) => {
@@ -36,19 +36,14 @@ router.get('/', getAllBranches);
 router.post('/', authMiddleware, isSuperAdmin, createBranch);
 
 // Super Admin Only: Update a branch
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, isSuperAdmin, async (req, res) => {
     try {
-        const user = await User.findByPk(req.user.id);
-        if (!user || user.role !== 'superadmin') {
-            return res.status(403).json({ message: 'Access Denied.' });
-        }
         const { name, location, adminId } = req.body;
         const branch = await Branch.findByPk(req.params.id);
         if (!branch) {
             return res.status(404).json({ message: 'Branch not found.' });
         }
         
-        // ✅ FIX: Ensure adminId is properly converted to integer or null
         branch.name = name || branch.name;
         branch.location = location || branch.location;
         branch.adminId = adminId ? parseInt(adminId, 10) : null;
@@ -77,7 +72,7 @@ router.delete('/:id', authMiddleware, isSuperAdmin, async (req, res) => {
 
 
 // ===============================================
-// ✅ NEW ROUTES FOR SERVICE LINKING (Super Admin)
+// ✅ NEW ROUTES FOR SERVICE LINKING
 // ===============================================
 
 // @route   POST /api/branches/:branchId/services
@@ -89,16 +84,14 @@ router.post('/:branchId/services', authMiddleware, isSuperAdmin, linkServicesToB
 // @desc    Get all services offered by a specific branch
 router.get('/:branchId/services', async (req, res) => {
     try {
-        // Find the branch and include its associated services (from the BranchServices join table)
         const branch = await Branch.findByPk(req.params.branchId, {
-            include: { model: Service, through: { attributes: [] } } // Only need Service data, exclude join table fields
+            include: { model: Service, through: { attributes: [] } } 
         });
         
         if (!branch) {
             return res.status(404).json({ message: 'Branch not found' });
         }
         
-        // The services are available on the Services property of the branch object
         res.json(branch.Services || []); 
     } catch (error) {
         console.error("Error fetching branch services:", error.message);
@@ -106,12 +99,17 @@ router.get('/:branchId/services', async (req, res) => {
     }
 });
 
+// ✅ NEW EFFICIENT PUBLIC ROUTE
+// @route   GET /api/branches/for-service/:serviceId
+// @desc    Get all branches that offer a specific service
+router.get('/for-service/:serviceId', getBranchesForService);
+
 
 // ===============================================
 // EXISTING ADMIN ROUTES (No Change)
 // ===============================================
 
-// ✅ CRITICAL FIX: Admin's "My Branch" route
+// Admin's "My Branch" route
 router.get('/my-branch', authMiddleware, async (req, res) => {
     try {
         const user = await User.findByPk(req.user.id);
@@ -120,10 +118,9 @@ router.get('/my-branch', authMiddleware, async (req, res) => {
             return res.status(403).json({ message: 'Access Denied. Only Branch Admins can access this.' });
         }
 
-        // ✅ FIX: Use parseInt to ensure proper comparison
         const branch = await Branch.findOne({ 
             where: { adminId: parseInt(user.id, 10) },
-            include: Service // Also include services offered by this branch for settings view
+            include: Service
         });
 
         if (!branch) {

@@ -1,6 +1,7 @@
-// Backend/src/controllers/branchController.js - UPDATED
+// Backend/src/controllers/branchController.js - FULLY UPDATED AND CORRECTED
+
 const Branch = require('../models/Branch');
-const Service = require('../models/Service'); // <-- NEW IMPORT
+const Service = require('../models/Service');
 const Appointment = require('../models/Appointment');
 const { Op } = require('sequelize');
 
@@ -40,22 +41,44 @@ exports.linkServicesToBranch = async (req, res) => {
     }
 };
 
+// ✅ NEW EFFICIENT FUNCTION for the frontend performance fix
+// GET /api/branches/for-service/:serviceId
+exports.getBranchesForService = async (req, res) => {
+    try {
+        const { serviceId } = req.params;
 
-// ✅ UPDATED: Get all branches with optional category filter
+        const service = await Service.findByPk(serviceId, {
+            include: [{
+                model: Branch,
+                through: { attributes: [] } 
+            }]
+        });
+
+        if (!service) {
+            return res.status(404).json({ message: 'Service not found' });
+        }
+
+        res.json(service.Branches || []);
+
+    } catch (error) {
+        console.error("Error fetching branches for service:", error.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+
+// Get all branches with optional category filter
 exports.getAllBranches = async (req, res) => {
   try {
-    const { category } = req.query; // Get category from query params
-    
+    const { category } = req.query;
     let whereClause = {};
     if (category) {
       whereClause.category = category;
     }
-    
     const branches = await Branch.findAll({
       where: whereClause,
       order: [['name', 'ASC']]
     });
-    
     res.json(branches);
   } catch (error) {
     console.error("Error fetching branches:", error.message);
@@ -66,18 +89,15 @@ exports.getAllBranches = async (req, res) => {
 // Create a new branch (Super Admin only)
 exports.createBranch = async (req, res) => {
   try {
-    const { name, location, category } = req.body; // ✅ Added category
-    
+    const { name, location, category } = req.body;
     if (!name || !location) {
       return res.status(400).json({ message: 'Please provide name and location' });
     }
-    
     const branch = await Branch.create({ 
       name, 
       location, 
-      category: category || 'General' // ✅ Include category
+      category: category || 'General'
     });
-    
     res.status(201).json({ message: 'Branch created successfully', branch });
   } catch (error) {
     console.error("Error creating branch:", error.message);
@@ -103,7 +123,7 @@ exports.getBranchById = async (req, res) => {
 exports.getAvailableSlots = async (req, res) => {
   try {
     const { id } = req.params;
-    const { date } = req.query;
+    const { date } = req.query; // date is a string like "2025-11-12"
 
     if (!date) {
       return res.status(400).json({ message: 'A date query parameter is required.' });
@@ -114,21 +134,24 @@ exports.getAvailableSlots = async (req, res) => {
       return res.status(404).json({ message: 'Branch not found.' });
     }
 
+    // Step 1: Get all appointments that are already booked for that day
     const existingAppointments = await Appointment.findAll({
       where: {
         branchId: id,
         appointmentDate: date,
-        status: { [Op.ne]: 'cancelled' }
+        status: { [Op.ne]: 'cancelled' } // Don't count cancelled appointments
       }
     });
     const bookedSlots = new Set(existingAppointments.map(apt => apt.timeSlot));
 
+    // Step 2: Generate all possible time slots for the branch's working hours
     const openingTime = branch.openingTime || '09:00:00';
     const closingTime = branch.closingTime || '17:00:00';
     const slotDuration = branch.slotDuration || 15;
     
     const allSlots = [];
     
+    // Helper function to convert "HH:MM" string to total minutes from midnight
     const timeToMinutes = (time) => {
       if (typeof time !== 'string') return 0;
       const [hours, minutes] = time.split(':').map(Number);
@@ -145,7 +168,41 @@ exports.getAvailableSlots = async (req, res) => {
       allSlots.push(formattedTime);
     }
     
-    const availableSlots = allSlots.filter(slot => !bookedSlots.has(slot));
+    // ✅ NEW LOGIC STARTS HERE
+    // Step 3: Check if the requested date is today. If so, get the current time.
+    const todaysDateString = new Date().toISOString().split('T')[0];
+    const isToday = (date === todaysDateString);
+    let currentMinutes = 0;
+
+    if (isToday) {
+        const now = new Date();
+        // Adjust for timezone if your server is in a different timezone than your users
+        // For simplicity, this uses the server's local time.
+        currentMinutes = now.getHours() * 60 + now.getMinutes();
+    }
+    // ✅ NEW LOGIC ENDS HERE
+
+    // Step 4: Filter the slots. Remove booked slots AND, if it's today, remove past slots.
+    const availableSlots = allSlots.filter(slot => {
+        // Condition 1: The slot must NOT be in the set of already booked slots.
+        const isAlreadyBooked = bookedSlots.has(slot);
+        if (isAlreadyBooked) {
+            return false;
+        }
+
+        // ✅ NEW LOGIC STARTS HERE
+        // Condition 2: If the request is for today, the slot's time must be in the future.
+        if (isToday) {
+            const slotMinutes = timeToMinutes(slot);
+            // The slot is only available if its start time is greater than or equal to the current time.
+            return slotMinutes >= currentMinutes;
+        }
+        // ✅ NEW LOGIC ENDS HERE
+
+        // If it's a future date, and the slot is not booked, it is available.
+        return true;
+    });
+
     res.json({ availableSlots });
 
   } catch (error) {

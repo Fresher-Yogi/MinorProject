@@ -34,7 +34,7 @@
         
         <div class="bg-white rounded-xl shadow-lg p-6 mb-8 flex items-center">
             <div class="bg-blue-100 rounded-full p-4 mr-4">
-                <i id="category-icon" class="fas fa-stethoscope text-blue-600 text-2xl"></i>
+                <i id="category-icon" class="fas fa-tag text-blue-600 text-2xl"></i>
             </div>
             <div>
                 <h3 class="text-sm text-gray-500 font-semibold uppercase">Booking For</h3>
@@ -55,7 +55,7 @@
         <div id="step-1" class="bg-white rounded-xl shadow-lg p-8 mb-6">
             <h2 class="text-2xl font-bold text-gray-800 mb-4"><i class="fas fa-hospital mr-3 text-blue-600"></i>Step 1: Choose a Branch</h2>
             <div>
-                <label for="branch-select" class="font-semibold text-gray-700">Available Branches</label>
+                <label for="branch-select" class="font-semibold text-gray-700">Available Branches for this Service</label>
                 <select id="branch-select" class="w-full p-3 border-2 border-gray-300 rounded-lg mt-1 focus:border-blue-500 focus:outline-none">
                      <option value="">Loading branches...</option>
                 </select>
@@ -94,11 +94,10 @@
     const API_URL = 'http://localhost:5000/api';
     
     let selectedService = null;
-    let selectedCategory = null; 
     let selectedBranch = null;
     let selectedDate = null;
     let selectedTime = null;
-    let allBranches = [];
+    let availableBranches = [];
 
     function showToast(message, isError = false) {
         Toastify({
@@ -115,7 +114,6 @@
         }
 
         selectedService = sessionStorage.getItem('selectedService');
-        selectedCategory = sessionStorage.getItem('selectedCategory'); 
         if (!selectedService) {
             document.body.innerHTML = `<h1>Error: No service was selected. Please go back and choose a service.</h1>`;
             return;
@@ -124,89 +122,51 @@
         document.getElementById('service-name-header').textContent = selectedService;
         document.getElementById('date-select').min = new Date().toISOString().split('T')[0];
 
-        await loadBranches();
+        await loadBranchesForService();
 
         document.getElementById('branch-select').addEventListener('change', handleBranchChange);
         document.getElementById('date-select').addEventListener('change', handleDateChange);
     });
 
+    async function loadBranchesForService() {
+        const select = document.getElementById('branch-select');
+        select.innerHTML = `<option value="">Loading branches...</option>`;
 
-   // --- CRITICAL CODE for Branches/Select-Slot.html ---
-
-async function loadBranches() {
-    const select = document.getElementById('branch-select');
-    select.innerHTML = `<option value="">Loading branches...</option>`; // Show loading message
-
-    try {
-        const token = localStorage.getItem('token');
-        
-        // 1. Fetch all services to find the ID of the selected service
-        const allServicesRes = await fetch(`${API_URL}/services`);
-        if (!allServicesRes.ok) throw new Error('Could not fetch the list of all services.');
-        const allServices = await allServicesRes.json();
-        
-        const serviceDetail = allServices.find(s => s.name === selectedService);
-        // Ensure the ID is explicitly converted to a string for comparison safety if necessary
-        const targetServiceId = serviceDetail ? String(serviceDetail.id) : null; 
-
-        if (!targetServiceId) {
-            select.innerHTML = `<option value="">-- Error: Service '${selectedService}' not found in database. --</option>`;
-            showToast(`Error: Service '${selectedService}' not found. Did the admin delete it?`, true);
-            return;
-        }
-
-        // 2. Fetch ALL branches
-        const branchesRes = await fetch(`${API_URL}/branches`);
-        if (!branchesRes.ok) throw new Error('Could not fetch the list of all branches.');
-        const allBranchesData = await branchesRes.json();
-        
-        const availableBranches = [];
-        
-        // --- 3. Use Promise.all to check service link for ALL branches in parallel ---
-        // Create an array of Promises, one for each branch's linked services check
-        const linkChecks = allBranchesData.map(async (branch) => {
-            // New route: GET /api/branches/:branchId/services returns linked services
-            const linkedServicesRes = await fetch(`${API_URL}/branches/${branch.id}/services`);
+        try {
+            const token = localStorage.getItem('token');
             
-            // Check if the branch's linked services include the targetServiceId
-            if (linkedServicesRes.ok) {
-                const linkedServices = await linkedServicesRes.json();
-                
-                // CRITICAL FIX: Ensure comparison is robust. 
-                // We convert linked service ID to string or use non-strict check (==)
-                const offersService = linkedServices.some(s => String(s.id) === targetServiceId); 
-                
-                if (offersService) {
-                    availableBranches.push(branch);
-                }
+            const allServicesRes = await fetch(`${API_URL}/services`);
+            if (!allServicesRes.ok) throw new Error('Could not fetch services list.');
+            const allServices = await allServicesRes.json();
+            const serviceDetail = allServices.find(s => s.name === selectedService);
+            
+            if (!serviceDetail) {
+                throw new Error(`Service '${selectedService}' not found in the system.`);
             }
-        });
+            const targetServiceId = serviceDetail.id;
 
-        // Wait for ALL network calls to finish before rendering the results
-        await Promise.all(linkChecks); 
-        
-        // --- 4. Render the filtered results ---
-        if (availableBranches.length === 0) {
-             select.innerHTML = `<option value="">-- No branches are available for this service --</option>`;
-             showToast('No branches found offering this service. Please contact an admin to link services.', true);
-             return;
+            const branchesRes = await fetch(`${API_URL}/branches/for-service/${targetServiceId}`);
+            if (!branchesRes.ok) throw new Error('Could not fetch available branches for this service.');
+            
+            const branches = await branchesRes.json();
+
+            if (branches.length === 0) {
+                select.innerHTML = `<option value="">-- No branches offer this service --</option>`;
+                showToast('No branches are currently linked to this service.', true);
+                return;
+            }
+
+            availableBranches = branches;
+            select.innerHTML = '<option value="">-- Please select a branch --</option>';
+            branches.forEach(branch => {
+                select.innerHTML += `<option value="${branch.id}">${branch.name} - ${branch.location}</option>`;
+            });
+
+        } catch (error) { 
+            showToast(`Error: ${error.message}`, true);
+            select.innerHTML = `<option value="">-- Error loading branches --</option>`;
         }
-
-        // Update the global variable
-        allBranches = availableBranches;
-
-        select.innerHTML = '<option value="">-- Please select a branch --</option>';
-        availableBranches.forEach(branch => {
-            select.innerHTML += `<option value="${branch.id}">${branch.name} - ${branch.location}</option>`;
-        });
-
-    } catch (error) { 
-        showToast(`Fatal Error in loadBranches: ${error.message}`, true);
-        select.innerHTML = `<option value="">-- Error loading branches --</option>`;
     }
-}
-
-
     
     async function loadAvailableSlots() {
         const container = document.getElementById('time-slots-container');
@@ -231,7 +191,7 @@ async function loadBranches() {
         const branchId = event.target.value;
         resetStep(2);
         if (branchId) {
-            selectedBranch = allBranches.find(b => b.id == branchId);
+            selectedBranch = availableBranches.find(b => b.id == branchId);
             activateStep(2);
         }
     }
@@ -300,7 +260,6 @@ async function loadBranches() {
             
             showToast('✅ Appointment booked successfully! Redirecting...');
             sessionStorage.removeItem('selectedService');
-            sessionStorage.removeItem('selectedCategory'); 
             setTimeout(() => { window.location.href = '../User/User-Dashboard.html'; }, 2000);
         } catch (error) {
             showToast(`❌ ${error.message}`, true);
