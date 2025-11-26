@@ -76,7 +76,7 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:5000';
+        const API_URL = 'https://minorproject-cf4a.onrender.com';
         const socket = io(API_URL);
 
         socket.on('appointmentUpdated', (updatedApt) => { loadDashboard(); });
