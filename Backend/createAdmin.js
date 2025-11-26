@@ -1,4 +1,4 @@
-require('dotenv').config({ path: './.env' });
+require('dotenv').config({ path: '../../../.env' });
 const bcrypt = require('bcryptjs');
 const sequelize = require('./src/config/db');
 const User = require('./src/models/user');
@@ -7,7 +7,7 @@ async function createSuperAdmin() {
     try {
         await sequelize.sync();
         
-        const email = 'admin@admin.com';
+        const email = 'admin@admin.com.com';
         const password = 'admin123';
         
         const existingAdmin = await User.findOne({ where: { email } });
